@@ -68,7 +68,9 @@ O projeto está sendo desenvolvido com base em conceitos de metodologias ágeis,
 Estudantes de Ciência da Computação
 
 ---
-
+## Documentação
+- Requisitos Funcionais: docs/requisitos_funcionais.md
+---
 ## Status do Projeto
 
 Em desenvolvimento

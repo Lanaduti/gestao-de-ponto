@@ -17,4 +17,5 @@ class Funcionario:
                 f"| Admissão: {self.data_admissao}") 
     
     # Este arquivo vai guardar apenas o modelo do que é um funcionário.
-    
+    # Se forem mudar algo lembra de não adicionar nada relacionado a banco de dados aqui, essas parada ficam em conexao.py valeuuuuu
+        

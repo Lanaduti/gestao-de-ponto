@@ -26,6 +26,11 @@ def iniciar_sistema():
 
     sistema.login(email="vitruviano999@gmail.com", senha="senha_errada") # Vai negar
     sistema.login(email="vitruviano999@gmail.com", senha="senha123")        # Vai aceitar
+    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
+    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
+    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
+    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
+    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
 
 # O botão de ligar do sistema:
 if __name__ == "__main__":

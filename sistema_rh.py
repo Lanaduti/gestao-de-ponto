@@ -1,5 +1,6 @@
 from funcionario import Funcionario
 from conexao import conectar_banco
+from datetime import datetime, date 
 
 class SistemaRH:
     def __init__(self):
@@ -106,6 +107,68 @@ class SistemaRH:
                 return False
             finally: 
                 conn.close()
+
+    # 24/04/2026 Victor adicionando FR03 ( Função de registrar ponto automático)
+    def registrar_ponto(self, id_funcionario):
+        """Registra o ponto automaticamente na sequência correta do dia."""
+        conn = conectar_banco()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                data_hoje = date.today()
+                hora_agora = datetime.now().strftime('%H:%M:%S')
+
+                sql_busca = """
+                    SELECT id, entrada, saida_intervalo, volta_intervalo, saida 
+                    FROM registro_ponto 
+                    WHERE id_funcionario = %s AND data_registro = %s
+                """
+                cursor.execute(sql_busca, (id_funcionario, data_hoje))
+                registro = cursor.fetchone()
+
+                print("\n--- Relógio de Ponto ---")
+
+                if not registro:
+                    sql_insert = "INSERT INTO registro_ponto (id_funcionario, data_registro, entrada) VALUES (%s, %s, %s)"
+                    cursor.execute(sql_insert, (id_funcionario, data_hoje, hora_agora))
+                    print(f"ENTRADA registrada às {hora_agora}")
+                else:
+                    id_ponto, entrada, s_int, v_int, saida = registro
+                    
+                    if s_int is None:
+                        sql_update = "UPDATE registro_ponto SET saida_intervalo = %s WHERE id = %s"
+                        cursor.execute(sql_update, (hora_agora, id_ponto))
+                        print(f"SAÍDA PARA INTERVALO registrada às {hora_agora}")
+                    
+                    elif v_int is None:
+                        sql_update = "UPDATE registro_ponto SET volta_intervalo = %s WHERE id = %s"
+                        cursor.execute(sql_update, (hora_agora, id_ponto))
+                        print(f"VOLTA DO INTERVALO registrada às {hora_agora}")
+                    
+                    elif saida is None:
+                        sql_update = "UPDATE registro_ponto SET saida = %s WHERE id = %s"
+                        cursor.execute(sql_update, (hora_agora, id_ponto))
+                        print(f"FIM DO EXPEDIENTE (Saída) registrado às {hora_agora}")
+                    
+                    else:
+                        print("ATENÇÃO: Todos os 4 pontos de hoje já foram registrados!")
+
+                conn.commit()
+                cursor.close()
+                return True
+
+            except Exception as e:
+                print(f"❌ Erro ao registrar ponto: {e}")
+                conn.rollback()
+                return False
+            finally:
+                conn.close()
+
+
+                
+                
+
+
 
 
 

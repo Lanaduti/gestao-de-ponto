@@ -1,6 +1,6 @@
 from funcionario import Funcionario
 from conexao import conectar_banco
-from datetime import datetime, date 
+from datetime import datetime, date, timezone, timedelta
 
 class SistemaRH:
     def __init__(self):
@@ -115,8 +115,9 @@ class SistemaRH:
         if conn:
             try:
                 cursor = conn.cursor()
-                data_hoje = date.today()
-                hora_agora = datetime.now().strftime('%H:%M:%S')
+                fuso_brasilia = timezone(timedelta(hours=-3))
+                data_hoje = datetime.now(fuso_brasilia).date()
+                hora_agora = datetime.now(fuso_brasilia).strftime('%H:%M:%S')
 
                 sql_busca = """
                     SELECT id, entrada, saida_intervalo, volta_intervalo, saida 
@@ -138,17 +139,17 @@ class SistemaRH:
                     if s_int is None:
                         sql_update = "UPDATE registro_ponto SET saida_intervalo = %s WHERE id = %s"
                         cursor.execute(sql_update, (hora_agora, id_ponto))
-                        print(f"SAÍDA PARA INTERVALO registrada às {hora_agora}")
+                        print(f"SAÍDA PARA INTERVALO registrada às {hora_agora} (Horário de Brasília)")
                     
                     elif v_int is None:
                         sql_update = "UPDATE registro_ponto SET volta_intervalo = %s WHERE id = %s"
                         cursor.execute(sql_update, (hora_agora, id_ponto))
-                        print(f"VOLTA DO INTERVALO registrada às {hora_agora}")
+                        print(f"VOLTA DO INTERVALO registrada às {hora_agora} (Horário de Brasília)")
                     
                     elif saida is None:
                         sql_update = "UPDATE registro_ponto SET saida = %s WHERE id = %s"
                         cursor.execute(sql_update, (hora_agora, id_ponto))
-                        print(f"FIM DO EXPEDIENTE (Saída) registrado às {hora_agora}")
+                        print(f"FIM DO EXPEDIENTE (Saída) registrado às {hora_agora} (Horário de Brasília)")
                     
                     else:
                         print("ATENÇÃO: Todos os 4 pontos de hoje já foram registrados!")

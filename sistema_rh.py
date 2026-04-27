@@ -1,3 +1,5 @@
+import urllib.request
+import json
 from funcionario import Funcionario
 from conexao import conectar_banco
 from datetime import datetime, date, timezone, timedelta
@@ -119,6 +121,14 @@ class SistemaRH:
                 data_hoje = datetime.now(fuso_brasilia).date()
                 hora_agora = datetime.now(fuso_brasilia).strftime('%H:%M:%S')
 
+                try: 
+                    url = "https://ipinfo.io/json"
+                    resposta = urllib.request.urlopen(url)
+                    dados = json.loads(resposta.read())
+                    local_atual = f"{dados.get('city')}, {dados.get('region')}"
+                except:
+                    local_atual = "Localização desconhecida"
+
                 sql_busca = """
                     SELECT id, entrada, saida_intervalo, volta_intervalo, saida 
                     FROM registro_ponto 
@@ -130,9 +140,9 @@ class SistemaRH:
                 print("\n--- Relógio de Ponto ---")
 
                 if not registro:
-                    sql_insert = "INSERT INTO registro_ponto (id_funcionario, data_registro, entrada) VALUES (%s, %s, %s)"
-                    cursor.execute(sql_insert, (id_funcionario, data_hoje, hora_agora))
-                    print(f"ENTRADA registrada às {hora_agora}")
+                    sql_insert = "INSERT INTO registro_ponto (id_funcionario, data_registro, entrada, localizacao) VALUES (%s, %s, %s, %s)"
+                    cursor.execute(sql_insert, (id_funcionario, data_hoje, hora_agora, local_atual))
+                    print(f"ENTRADA registrada às {hora_agora} (Horário de Brasília) - Local: {local_atual}")
                 else:
                     id_ponto, entrada, s_int, v_int, saida = registro
                     

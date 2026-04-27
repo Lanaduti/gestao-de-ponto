@@ -9,23 +9,23 @@ def iniciar_sistema():
     data_hoje = date.today()
 
     id_novo_funcionario = sistema.cadastrar_funcionario(
-        nome="Vitruviano", 
+        nome="jairo", 
         cpf="11122233344",          
-        cargo="Analista Pleno",
+        cargo="Analista junior",
         setor="TI",
-        salario_base=5000.00,
+        salario_base=6000.00,
         data_admissao=data_hoje
     )
     if id_novo_funcionario:
         sistema.cadastrar_usuario(
-            email="vitruviano999@gmail.com",
+            email="jairo@gmail.com",
             senha="senha123",
             tipo="Admin",
             id_funcionario=id_novo_funcionario
         )
 
-    sistema.login(email="vitruviano999@gmail.com", senha="senha_errada") # Vai negar
-    sistema.login(email="vitruviano999@gmail.com", senha="senha123")        # Vai aceitar
+    sistema.login(email="jairo@gmail.com", senha="senha_errada") # Vai negar
+    sistema.login(email="jairo@gmail.com", senha="senha123")        # Vai aceitar
     sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
     sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
     sistema.registrar_ponto(id_funcionario= id_novo_funcionario)

@@ -1,37 +1,55 @@
-from datetime import date
-from sistema_rh import SistemaRH
+from datetime import date 
+from sistema_rh import  SistemaRH 
 
 def iniciar_sistema():
     sistema = SistemaRH()
 
-    print(" Iniciando o Sistema de RH...\n")
+    while True: 
+        print("\n" + "="*35)
+        print("SISTEMA DE RECURSOS HUMANOS - MENU PRINCIPAL")
+        print("="*35)
+        print("1 - Cadastrar novo funcionário")
+        print("2 - Registrar ponto (Entrada/Saída/Intervalo)")
+        print("3 - Calcular Horas Trabalhadas do Dia")
+        print("4 - Ver lista de funcionários (Descobrir IDs)")
+        print("0 - Sair do Sistema")
+        print("-" * 35)
+        
+        opcao = input(" Escolha uma opção: ")
 
-    data_hoje = date.today()
+        if opcao == "1":
+            print("\n---  NOVO CADASTRO ---")
+            nome = input("Digite o Nome: ")
+            cpf = input("Digite o CPF (só números): ")
+            cargo = input("Digite o Cargo: ")
+            setor = input("Digite o Setor: ")
+            salario = float(input("Digite o Salário Base (ex: 3500.00): ")) 
+            
+            sistema.cadastrar_funcionario(nome, cpf, cargo, setor, salario, date.today())
+        
+        elif opcao == "2":
+            print("\n---  BATER PONTO ---")
+            try:
+                id_func = int(input("Digite o ID do funcionário (apenas o número): "))
+                sistema.registrar_ponto(id_func)
+            except ValueError:
+                print(" ERRO: Por favor, digite apenas números para o ID!")
 
-    id_novo_funcionario = sistema.cadastrar_funcionario(
-        nome="jairo", 
-        cpf="11122233344",          
-        cargo="Analista junior",
-        setor="TI",
-        salario_base=6000.00,
-        data_admissao=data_hoje
-    )
-    if id_novo_funcionario:
-        sistema.cadastrar_usuario(
-            email="jairo@gmail.com",
-            senha="senha123",
-            tipo="Admin",
-            id_funcionario=id_novo_funcionario
-        )
+        elif opcao == "3":
+            print("\n---  CÁLCULO DE HORAS ---")
+            try:
+                id_func = int(input("Digite o ID do funcionário (apenas o número): "))
+                sistema.calcular_horas_trabalhadas(id_func, date.today())
+            except ValueError:
+                print(" ERRO: Por favor, digite apenas números para o ID!")
 
-    sistema.login(email="jairo@gmail.com", senha="senha_errada") # Vai negar
-    sistema.login(email="jairo@gmail.com", senha="senha123")        # Vai aceitar
-    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
-    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
-    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
-    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
-    sistema.registrar_ponto(id_funcionario= id_novo_funcionario)
+        elif opcao == "4":
+            sistema.listar_funcionarios()
+            
+        elif opcao == "0":
+            print("\n Encerrando o sistema... Até logo!\n")
+            break
 
-# O botão de ligar do sistema:
 if __name__ == "__main__":
     iniciar_sistema()
+   

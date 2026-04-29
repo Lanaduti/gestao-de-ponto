@@ -175,22 +175,85 @@ class SistemaRH:
             finally:
                 conn.close()
 
+# 29/04/2026 Victor adicionando FR06 calculando horas trabalhadas.
+    def calcular_horas_trabalhadas(self, id_funcionario, data_calculo):
+        """Calcula as horas trabalhadas no dia descontando o intervalo."""
+        conn = conectar_banco()
+        if conn:
+            try: 
+                cursor = conn.cursor()
+                sql = """
+                    SELECT entrada, saida_intervalo, volta_intervalo, saida
+                    FROM registro_ponto
+                    WHERE id_funcionario = %s AND data_registro = %s
+                    """
+                cursor.execute(sql, (id_funcionario, data_calculo))
+                registro = cursor.fetchone()
 
+                if not registro:
+                    print(f"NENHUM ponto registrado para a data {data_calculo}.")
+                    return None
                 
+                entrada, s_int, v_int, saida = registro
+
+                if None in (entrada, s_int, v_int, saida):
+                    print("A jornada de hoje ainda não terminou! Faltam batidas de ponto para fechar o calculo.")
+                    return None
+            
+                data_base = date.today()
+
+                dt_entrada = datetime.combine(data_base, entrada)
+                dt_s_int = datetime.combine(data_base, s_int)
+                dt_v_int = datetime.combine(data_base, v_int)
+                dt_saida = datetime.combine(data_base, saida)
+
+                tempo_total_empresa = dt_saida - dt_entrada
+                tempo_intervalo = dt_v_int - dt_s_int
+
+                horas_efetivas = tempo_total_empresa - tempo_intervalo
+
+                print(f"-- Fechamento do Dia ({data_calculo})---")
+                print(f"Tempo total na empresa: {tempo_total_empresa}")
+                print(f"Tempo de intervalo...: {tempo_intervalo}")
+                print(f"Horas trabalhadas...: {horas_efetivas}")
+                print("-" * 38)
+
+                cursor.close()
+                return horas_efetivas
+            
+            except Exception as e: 
+                print(f"Erro ao calcular horas: {e}")
+            finally: 
+                conn.close()
+
+
+    def listar_funcionarios(self):
+        """Mostra uma tabela rápida com os ids e o nome dos funcionários."""
+        conn = conectar_banco()
+        if conn: 
+            try: 
+                cursor = conn. cursor()
+                cursor. execute("SELECT id, nome, cargo FROM funcionario ORDER BY id ASC")
+                lista = cursor.fetchall()
+
+                print("\n" + "="*50)
+                print(" LISTA DE FUNCIONÁRIOS CADASTRADOS")
+                print("="*50)
+
+                if not lista:
+                    print("Nenhum funcionário cadastrado no sistema ainda.")
+                else:
+                    print(f"{'ID':<5} | {'NOME':<25} | {'CARGO'}")
+                    print("-" * 50)
+                    for funcionario in lista:
+                        print(f"{funcionario[0]:<5} | {funcionario[1]:<25} | {funcionario[2]}")
                 
+                print("="*50)
+                cursor.close()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+            except Exception as e:
+                print(f" Erro ao listar funcionários: {e}")
+            finally:
+                conn.close()
 
         #aqui é onde vão ficar as funções relacionados a manipulações de dados tipo cadastro e essas paradas fechouuuuuu??

@@ -12,6 +12,7 @@ def iniciar_sistema():
         print("2 - Registrar ponto (Entrada/Saída/Intervalo)")
         print("3 - Calcular Horas Trabalhadas do Dia")
         print("4 - Ver lista de funcionários (Descobrir IDs)")
+        print("5 - Relatório Mensal de Ponto")
         print("0 - Sair do Sistema")
         print("-" * 35)
         
@@ -50,6 +51,17 @@ def iniciar_sistema():
             print("\n Encerrando o sistema... Até logo!\n")
             break
 
+        elif opcao == "5": 
+            print ("\n --- Relátorio Mensal ---")
+            try: 
+                id_func = int(input("Digite o ID do funcionário: "))
+                mes = int(input("Digite o Mês (ex: 4 de Abril): "))
+                ano  =int(input("Digite o Ano (ex: 2026):"))
+
+                sistema.relatorio_mensal(id_func, mes, ano)
+            except ValueError :
+                print(" ERRO: Por favor, digite apenas números interios!")
+                
 if __name__ == "__main__":
     iniciar_sistema()
    

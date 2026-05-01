@@ -169,7 +169,7 @@ class SistemaRH:
                 return True
 
             except Exception as e:
-                print(f"❌ Erro ao registrar ponto: {e}")
+                print(f" Erro ao registrar ponto: {e}")
                 conn.rollback()
                 return False
             finally:
@@ -254,6 +254,53 @@ class SistemaRH:
             except Exception as e:
                 print(f" Erro ao listar funcionários: {e}")
             finally:
+                conn.close()
+    #29/04/2006 Victor adicionando FR07 ( O sistema deve permitir a visualização dos registros por mês e ano.)
+    def relatorio_mensal(self, id_funcionario, mes,ano):
+        """Gera um relatório de todos os pontos batidos em um mês específico."""
+        conn = conectar_banco()
+        if conn: 
+            try: 
+                cursor = conn.cursor()
+
+                sql = """
+                    SELECT data_registro, entrada, saida_intervalo, volta_intervalo, saida
+                    FROM  registro_ponto
+                    WHERE id_funcionario = %s
+                        AND EXTRACT(MONTH FROM data_registro) =%s
+                        AND EXTRACT( YEAR FROM data_registro) = %s
+                        ORDER BY data_registro ASC
+                        """
+                
+                cursor.execute(sql, (id_funcionario, mes, ano))
+                registros = cursor.fetchall()
+
+                print("\n" + "="*70)
+                print(f"RELATÓRIO DE PONTO - MÊS {mes:02d}/{ano} (ID Funcionário: {id_funcionario})")
+                print("="*70)
+
+                if not registros:
+                    print("Nenhum registro encontrado nesse período.")
+                else: 
+                    print(f"{'DATA':<12} | {'ENTRADA':<10} | {'SAÍDA INT':<10} | {'VOLTA INT':<10} | {'SAÍDA':<10}")
+                    print("-" * 70)
+
+                    for reg in registros: 
+                        data_formatada = reg[0].strftime("%d/%m/%Y")
+
+                        entrada = str(reg[1]) if reg[1] else "---"
+                        saida_int = str(reg[2]) if reg[2] else "---"
+                        volta_int = str(reg[3]) if reg[3] else "---"
+                        saida = str(reg[4]) if reg[4] else "---"
+
+                        print(f"{data_formatada:<12} | {entrada:<10} | {saida_int:<10} | {volta_int:<10} | {saida:<10}")
+
+                print("="*70)
+                cursor.close()
+
+            except Exception as e: 
+                print(f"Erro ao gerar relátorio mensal: {e}")
+            finally: 
                 conn.close()
 
         #aqui é onde vão ficar as funções relacionados a manipulações de dados tipo cadastro e essas paradas fechouuuuuu??

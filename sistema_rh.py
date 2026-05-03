@@ -1,6 +1,7 @@
 import urllib.request
 import json
 from funcionario import Funcionario
+from fpdf import FPDF
 from conexao import conectar_banco
 from datetime import datetime, date, timezone, timedelta
 
@@ -302,5 +303,98 @@ class SistemaRH:
                 print(f"Erro ao gerar relátorio mensal: {e}")
             finally: 
                 conn.close()
+
+    def exportar_relatorio_pdf(self, id_funcionario, mes, ano):
+        """Gera um arquivo PDF com o relatório de ponto do mês."""
+        conn = conectar_banco()
+        if conn: 
+            try: 
+                cursor = conn.cursor()
+
+                cursor.execute("SELECT nome, cpf FROM funcionario WHERE id = %s", (id_funcionario,))
+                func = cursor.fetchone()
+
+                if not func: 
+                    print("Funcionário não encontrado no Banco de Dados.")
+                    return 
+                
+                nome_func, cpf_func = func 
+
+                sql = """
+                    SELECT data_registro, entrada, saida_intervalo,volta_intervalo, saida
+                    FROM registro_ponto 
+                    WHERE id_funcionario = %s
+                        AND EXTRACT(MONTH FROM data_registro) = %s
+                        AND EXTRACT(YEAR FROM data_registro) = %s
+                        ORDER BY data_registro ASC
+                """
+                cursor.execute(sql, (id_funcionario, mes, ano))
+                registros = cursor.fetchall()
+
+                if not registros: 
+                    print("Nenhum registro encontrado para gerar o PDF neste período.")
+                    return
+                
+               # --- COMEÇANDO A DESENHAR O PDF ---
+                pdf = FPDF()
+                pdf.add_page()
+                
+                # Título Principal (Usando helvetica em Negrito 'B')
+                pdf.set_font("helvetica", "B", 16)
+                pdf.cell(190, 10, txt="Relatorio de Ponto Mensal", ln=True, align='C')
+                
+                # Informações do Funcionário (Usando helvetica normal)
+                pdf.set_font("helvetica", size=12)
+                pdf.cell(190, 10, txt=f"Funcionario: {nome_func} | CPF: {cpf_func}", ln=True, align='L')
+                pdf.cell(190, 10, txt=f"Periodo: {mes:02d}/{ano}", ln=True, align='L')
+                pdf.ln(5) # Pula uma linha
+
+                # Cabeçalho da Tabela
+                pdf.set_font("helvetica", "B", 10)
+                pdf.cell(30, 10, "Data", border=1, align='C')
+                pdf.cell(35, 10, "Entrada", border=1, align='C')
+                pdf.cell(35, 10, "Saida Int.", border=1, align='C')
+                pdf.cell(35, 10, "Volta Int.", border=1, align='C')
+                pdf.cell(35, 10, "Saida", border=1, align='C')
+                pdf.ln()
+
+                # Preenchendo as linhas da tabela com os dados do banco
+                pdf.set_font("helvetica", size=10)
+                for reg in registros:
+                    data_formatada = reg[0].strftime("%d/%m/%Y")
+                    entrada = str(reg[1]) if reg[1] else "---"
+                    saida_int = str(reg[2]) if reg[2] else "---"
+                    volta_int = str(reg[3]) if reg[3] else "---"
+                    saida = str(reg[4]) if reg[4] else "---"
+
+                    pdf.cell(30, 10, data_formatada, border=1, align='C')
+                    pdf.cell(35, 10, entrada, border=1, align='C')
+                    pdf.cell(35, 10, saida_int, border=1, align='C')
+                    pdf.cell(35, 10, volta_int, border=1, align='C')
+                    pdf.cell(35, 10, saida, border=1, align='C')
+                    pdf.ln()
+
+                # Salva o arquivo na sua pasta do projeto
+                nome_arquivo = f"Relatorio_Ponto_{nome_func.replace(' ', '_')}_{mes:02d}_{ano}.pdf"
+                pdf.output(nome_arquivo)
+                
+                print(f"\n✅ SUCESSO! O arquivo '{nome_arquivo}' foi criado na pasta do projeto.")
+
+            except Exception as e:
+                print(f"❌ Erro ao gerar PDF: {e}")
+            finally:
+                cursor.close()
+                conn.close()
+
+
+
+
+
+
+
+
+
+
+
 
         #aqui é onde vão ficar as funções relacionados a manipulações de dados tipo cadastro e essas paradas fechouuuuuu??

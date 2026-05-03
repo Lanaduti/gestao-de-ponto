@@ -12,7 +12,8 @@ def iniciar_sistema():
         print("2 - Registrar ponto (Entrada/Saída/Intervalo)")
         print("3 - Calcular Horas Trabalhadas do Dia")
         print("4 - Ver lista de funcionários (Descobrir IDs)")
-        print("5 - Relatório Mensal de Ponto")
+        print("5 - Relatório Mensal de Ponto (Ver na tela)")
+        print("6 - Gerar relatório Mensal em PDF (Salvar arquivo)")
         print("0 - Sair do Sistema")
         print("-" * 35)
         
@@ -61,7 +62,17 @@ def iniciar_sistema():
                 sistema.relatorio_mensal(id_func, mes, ano)
             except ValueError :
                 print(" ERRO: Por favor, digite apenas números interios!")
-                
+
+        elif opcao == "6": 
+            print("\n --- Exportar Relatório PDF ---")
+            try: 
+                id_func = int(input("Digite ID do funcionário:"))
+                mes = int(input("Digite o Mês (ex: 5 de Maio):"))
+                ano = int(input("Digite o ano (ex:2026):"))
+
+                sistema.exportar_relatorio_pdf(id_func, mes, ano)
+            except ValueError:
+                print("ERRO: Por favor, digite apenas números inteiros!")
 if __name__ == "__main__":
     iniciar_sistema()
    

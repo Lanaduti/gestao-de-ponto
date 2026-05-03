@@ -83,11 +83,12 @@ def iniciar_sistema():
                 data_falta = datetime.strptime(data_str, "%d/%m/%Y").date()
                 
                 motivo = input("Digite o motivo (ex: Consulta médica, Pneu furado): ")
+                comp = input("Haverá compensação de horas? (S/N): ").strip().upper()
+                compensacao = "Sim" if comp == "S" else "Não"
                 
-                sistema.enviar_justificativa(id_func, data_falta, motivo)
+                sistema.enviar_justificativa(id_func, data_falta, motivo, compensacao)
             except ValueError:
                 print(" ERRO: Verifique se o ID é apenas número e se a data está no formato correto (DD/MM/AAAA)!")
 
 if __name__ == "__main__":
-    iniciar_sistema()
-   
+    iniciar_sistema() 

@@ -385,13 +385,13 @@ class SistemaRH:
                 cursor.close()
                 conn.close()
 # 02/05/2026 Victor adicionando RF09 (O sistema deve permitir que o funcionário envie justificativas.)
-    def enviar_justificativa(self, id_funcionario, data_falta, motivo):
-        """Salva uma justificativa de falta ou atraso do funcionário."""
+    def enviar_justificativa(self, id_funcionario, data_falta, motivo, compensacao):
+        """Salva uma justificativa com a opção de compensação de horas."""
         conn = conectar_banco()
         if conn:
             try:
                 cursor = conn.cursor()
-    
+                
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS registro_justificativa (
                         id SERIAL PRIMARY KEY,
@@ -404,12 +404,18 @@ class SistemaRH:
                 """)
                 conn.commit()
 
-                sql = "INSERT INTO registro_justificativa (id_funcionario, data_falta, motivo) VALUES (%s, %s, %s)"
-                cursor.execute(sql, (id_funcionario, data_falta, motivo))
+                try:
+                    cursor.execute("ALTER TABLE registro_justificativa ADD COLUMN compensacao VARCHAR(3) DEFAULT 'Não'")
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                sql = "INSERT INTO registro_justificativa (id_funcionario, data_falta, motivo, compensacao) VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, (id_funcionario, data_falta, motivo, compensacao))
                 conn.commit()
                 
                 print(f"\n SUCESSO! Justificativa enviada para a análise do RH.")
-                print(f"Status atual: PENDENTE")
+                print(f"Status: PENDENTE | Compensar horas: {compensacao}")
                 
                 cursor.close()
             except Exception as e:
@@ -417,8 +423,6 @@ class SistemaRH:
                 conn.rollback()
             finally:
                 conn.close()
-
-
 
 
 

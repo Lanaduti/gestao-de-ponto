@@ -1,4 +1,4 @@
-from datetime import date 
+from datetime import date, datetime
 from sistema_rh import  SistemaRH 
 
 def iniciar_sistema():
@@ -14,6 +14,7 @@ def iniciar_sistema():
         print("4 - Ver lista de funcionários (Descobrir IDs)")
         print("5 - Relatório Mensal de Ponto (Ver na tela)")
         print("6 - Gerar relatório Mensal em PDF (Salvar arquivo)")
+        print("7 - Enviar Justificativa (Falta/Atraso)")
         print("0 - Sair do Sistema")
         print("-" * 35)
         
@@ -73,6 +74,20 @@ def iniciar_sistema():
                 sistema.exportar_relatorio_pdf(id_func, mes, ano)
             except ValueError:
                 print("ERRO: Por favor, digite apenas números inteiros!")
+
+        elif opcao == "7":
+            print("\n---  ENVIAR JUSTIFICATIVA ---")
+            try:
+                id_func = int(input("Digite o ID do funcionário: "))
+                data_str = input("Digite a data da falta/atraso (DD/MM/AAAA): ")
+                data_falta = datetime.strptime(data_str, "%d/%m/%Y").date()
+                
+                motivo = input("Digite o motivo (ex: Consulta médica, Pneu furado): ")
+                
+                sistema.enviar_justificativa(id_func, data_falta, motivo)
+            except ValueError:
+                print(" ERRO: Verifique se o ID é apenas número e se a data está no formato correto (DD/MM/AAAA)!")
+
 if __name__ == "__main__":
     iniciar_sistema()
    

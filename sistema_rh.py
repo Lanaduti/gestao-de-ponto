@@ -374,16 +374,48 @@ class SistemaRH:
                     pdf.cell(35, 10, saida, border=1, align='C')
                     pdf.ln()
 
-                # Salva o arquivo na sua pasta do projeto
                 nome_arquivo = f"Relatorio_Ponto_{nome_func.replace(' ', '_')}_{mes:02d}_{ano}.pdf"
                 pdf.output(nome_arquivo)
                 
-                print(f"\n✅ SUCESSO! O arquivo '{nome_arquivo}' foi criado na pasta do projeto.")
+                print(f"\n SUCESSO! O arquivo '{nome_arquivo}' foi criado na pasta do projeto.")
 
             except Exception as e:
-                print(f"❌ Erro ao gerar PDF: {e}")
+                print(f" Erro ao gerar PDF: {e}")
             finally:
                 cursor.close()
+                conn.close()
+# 02/05/2026 Victor adicionando RF09 (O sistema deve permitir que o funcionário envie justificativas.)
+    def enviar_justificativa(self, id_funcionario, data_falta, motivo):
+        """Salva uma justificativa de falta ou atraso do funcionário."""
+        conn = conectar_banco()
+        if conn:
+            try:
+                cursor = conn.cursor()
+    
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS registro_justificativa (
+                        id SERIAL PRIMARY KEY,
+                        id_funcionario INTEGER REFERENCES funcionario(id),
+                        data_falta DATE,
+                        motivo TEXT,
+                        status VARCHAR(20) DEFAULT 'Pendente',
+                        data_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                conn.commit()
+
+                sql = "INSERT INTO registro_justificativa (id_funcionario, data_falta, motivo) VALUES (%s, %s, %s)"
+                cursor.execute(sql, (id_funcionario, data_falta, motivo))
+                conn.commit()
+                
+                print(f"\n SUCESSO! Justificativa enviada para a análise do RH.")
+                print(f"Status atual: PENDENTE")
+                
+                cursor.close()
+            except Exception as e:
+                print(f" Erro ao enviar justificativa: {e}")
+                conn.rollback()
+            finally:
                 conn.close()
 
 

@@ -8,8 +8,10 @@ def conectar_banco():
             host="localhost",         
             database="rh_sistema",    # O nome do banco que você criou
             user="postgres",          
-            password="vitu123",     # <--- COLOQUE SUA SENHA AQUI
-            port="5432"               
+            password="Lana8649",     # <--- COLOQUE SUA SENHA AQUI
+            port="5432",     
+
+            options='-c lc_messages=C'          
         )
         return conn
     except Exception as e:

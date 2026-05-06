@@ -423,6 +423,39 @@ class SistemaRH:
                 conn.rollback()
             finally:
                 conn.close()
+#Victor adicionando funções importantes que não tinham 
+
+    def verificar_admin(self, email, senha):
+        """Verifica se o usuário tem permissão de Admin."""
+        if email == "admin@empresa.com" and senha == "admin123":
+            return True 
+        
+        conn = conectar_banco()
+        if conn: 
+            try: 
+                cursor = conn.cursor()
+                sql = """ 
+                    UPDATE funcionario 
+                    SET cargo = 'Administrador'
+                    WHERE id = %s
+                """
+                cursor.execute(sql, (novo_cargo, novo_setor, novo_salario, id_funcionario))
+
+                if cursor.rowcount > 0:
+                    conn.commit()
+                    print(f"SUCESSO: Os dados do funcionário (ID{id_funcionario}) foram atualizados!")
+                else:
+                    print(f"\n ERRO: Nenhum funcionário encontrado com o ID {id_funcionario}.")
+                
+                cursor.close()
+            except Exception as e: 
+                print(f"ERRO ao atualizar funcionário {e}")
+                conn.rollback()
+            finally:
+                conn.close()
+                
+                
+                 
 
 
 

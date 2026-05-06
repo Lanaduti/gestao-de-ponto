@@ -15,6 +15,7 @@ def iniciar_sistema():
         print("5 - Relatório Mensal de Ponto (Ver na tela)")
         print("6 - Gerar relatório Mensal em PDF (Salvar arquivo)")
         print("7 - Enviar Justificativa (Falta/Atraso)")
+        print("8 - Editar Dados do funcionário (Apenas Admin)")
         print("0 - Sair do Sistema")
         print("-" * 35)
         
@@ -89,6 +90,26 @@ def iniciar_sistema():
                 sistema.enviar_justificativa(id_func, data_falta, motivo, compensacao)
             except ValueError:
                 print(" ERRO: Verifique se o ID é apenas número e se a data está no formato correto (DD/MM/AAAA)!")
+
+        elif opcao == "8":
+            print("\n---  ÁREA RESTRITA (ADMINISTRAÇÃO) ---")
+            email_admin = input("Digite o e-mail corporativo (Admin): ")
+            senha_admin = input("Digite a senha: ")
+
+            if sistema.verificar_admin(email_admin, senha_admin):
+                print("\n ACESSO LIBERADO! MODO EDIÇÃO ATIVADO.")
+                try:
+                    id_func = int(input("Digite o ID do funcionário que será alterado: "))
+                    print("\n-- Preencha os novos dados --")
+                    novo_cargo = input("Novo Cargo: ")
+                    novo_setor = input("Novo Setor: ")
+                    novo_salario = float(input("Novo Salário Base (ex: 4500.00): "))
+                    
+                    sistema.editar_funcionario(id_func, novo_cargo, novo_setor, novo_salario)
+                except ValueError:
+                    print(" ERRO: O ID e o Salário precisam ser apenas números!")
+            else:
+                print("\n ACESSO NEGADO: E-mail/Senha incorretos ou perfil sem permissão de Administrador!")
 
 if __name__ == "__main__":
     iniciar_sistema() 

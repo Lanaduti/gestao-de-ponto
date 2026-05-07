@@ -1,50 +1,132 @@
 from datetime import date, datetime
 from sistema_rh import  SistemaRH 
 
+
+# Login do sistema 
 def tela_login(sistema):
-    print("\n=== ACESSO AO SISTEMA ===")
+
+    print("\n===== LOGIN DO SISTEMA =====")
 
     while True:
-        email = input("Email: ")
+
+        email = input("E-mail: ")
         senha = input("Senha: ")
 
-        if sistema.login(email, senha):
-            print("\nLogin realizado com sucesso!")
-            break
+        usuario = sistema.login(email, senha)
+
+        if usuario:
+
+            print("\nLOGIN REALIZADO COM SUCESSO!")
+
+            return usuario
+
         else:
-            print("\nEmail ou senha incorretos!")
+            print("\nEMAIL OU SENHA INCORRETOS!")
+
+# Menu princinpal ADM
+def menu_admin():
+
+    print("\n" + "="*35)
+    print("MENU ADMINISTRADOR")
+    print("="*35)
+
+    print("1 - Funcionários")
+    print("2 - Registro de Ponto")
+    print("3 - Banco de Horas")
+    print("4 - Folha de Pagamento")
+    print("5 - Escalas")
+    print("6 - Justificativas")
+    print("7 - Férias")
+    print("8 - Meu Perfil")
+    print("9 - Ajuda")
+    print("0 - Sair")
+
+    return input("\nEscolha uma opção: ")
+
+# Menu princinpal funcionários
+def menu_funcionario():
+
+    print("\n" + "="*35)
+    print("MENU FUNCIONÁRIO")
+    print("="*35)
+
+    print("1 - Registro de Ponto")
+    print("2 - Banco de Horas")
+    print("3 - Contracheque")
+    print("4 - Justificativas")
+    print("5 - Meu Perfil")
+    print("6 - Férias")
+    print("7 - Ajuda")
+    print("0 - Sair")
+
+    return input("\nEscolha uma opção: ")
+
+# Submenu de gerenciamento de funcionários
+def menu_funcionarios():
+
+    print("\n" + "="*35)
+    print("MENU FUNCIONÁRIOS")
+    print("="*35)
+
+    print("1 - Cadastrar Funcionário")
+    print("2 - Listar Funcionários")
+    print("3 - Editar Funcionário")
+    print("4 - Excluir Funcionário")
+    print("0 - Voltar")
+
+    return input("\nEscolha uma opção: ")
 
 def iniciar_sistema():
+
     sistema = SistemaRH()
     
-    tela_login(sistema)
+ # Guarda informações do usuário logado 
+    usuario_logado = tela_login(sistema)
 
-    while True: 
-        print("\n" + "="*35)
-        print("SISTEMA DE RECURSOS HUMANOS - MENU PRINCIPAL")
-        print("="*35)
-        print("1 - Cadastrar novo funcionário")
-        print("2 - Registrar ponto (Entrada/Saída/Intervalo)")
-        print("3 - Calcular Horas Trabalhadas do Dia")
-        print("4 - Ver lista de funcionários (Descobrir IDs)")
-        print("5 - Relatório Mensal de Ponto (Ver na tela)")
-        print("6 - Gerar relatório Mensal em PDF (Salvar arquivo)")
-        print("7 - Enviar Justificativa (Falta/Atraso)")
-        print("8 - Editar Dados do funcionário (Apenas Admin)")
-        print("0 - Sair do Sistema")
-        print("-" * 35)
-        
-        opcao = input(" Escolha uma opção: ")
+    print(f"\nTIPO DE USUÁRIO: {usuario_logado['tipo']}")
 
-        if opcao == "1":
-            print("\n---  NOVO CADASTRO ---")
-            nome = input("Digite o Nome: ")
-            cpf = input("Digite o CPF (só números): ")
-            cargo = input("Digite o Cargo: ")
-            setor = input("Digite o Setor: ")
-            salario = float(input("Digite o Salário Base (ex: 3500.00): ")) 
+# Verifica o tipo de usuário para liberar menus diferentes
+    tipo_usuario = usuario_logado["tipo"]
+
+    while True:
+
+# Exibe menus diferentes dependendo do tipo de usuário  
+        if tipo_usuario == "admin":
+            opcao = menu_admin()
             
-            sistema.cadastrar_funcionario(nome, cpf, cargo, setor, salario, date.today())
+        else:
+            opcao = menu_funcionario()
+
+ # Menu de gerenciamento de funcionário
+        if opcao == "1":
+            
+         subopcao = menu_funcionarios()
+
+# Cadastro de funcionário
+         if subopcao == "1":
+
+          print("\n--- NOVO CADASTRO ---")
+
+          nome = input("Digite o Nome: ")
+          cpf = input("Digite o CPF (só números): ")
+          cargo = input("Digite o Cargo: ")
+          setor = input("Digite o Setor: ")
+
+          salario = float(input("Digite o Salário Base: "))
+
+          sistema.cadastrar_funcionario(
+            nome,
+            cpf,
+            cargo,
+            setor,
+            salario,
+            date.today()
+        )
+
+# Lista funcionários cadastrados
+        elif subopcao == "2":
+
+         sistema.listar_funcionarios()
         
         elif opcao == "2":
             print("\n---  BATER PONTO ---")

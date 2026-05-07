@@ -88,28 +88,46 @@ class SistemaRH:
             finally: 
                 conn.close() 
 
-    def login(self, email, senha): 
-        conn = conectar_banco()
-        if conn: 
-            try: 
-                cursor = conn.cursor()
-                sql = "SELECT id, email, tipo, id_funcionario FROM usuario WHERE email = %s AND senha = %s"
-                cursor.execute(sql, (email, senha))
+# Função responsável pela autenticação do usuário
+    def login(self, email, senha):
+    conn = conectar_banco() 
 
-                usuario = cursor.fetchone() 
+    if conn:
+        try:
+            cursor = conn.cursor()
 
-                print("\n --- Tentativa de login ---")
-                if usuario: 
-                    print(f"ACESSO LIBERADO! Bem-vindo(a), {usuario[1]} (Perfil: {usuario[2]}).")
-                    return True 
-                else: 
-                    print("ACESSO NEGADO! Email ou senha incorretos.")
-                    return False    
-            except Exception as e: 
-                print(f"Erro no sistema de login: {e}")
-                return False
-            finally: 
-                conn.close()
+            sql = """
+                SELECT id, email, tipo, id_funcionario
+                FROM usuario
+                WHERE email = %s AND senha = %s
+            """
+
+            cursor.execute(sql, (email, senha))
+
+            usuario = cursor.fetchone()
+
+            if usuario:
+                print(f"\nLOGIN REALIZADO COM SUCESSO!")
+                print(f"Bem-vindo(a): {usuario[1]}")
+                print(f"Perfil: {usuario[2]}")
+
+                return {
+                    "id": usuario[0],
+                    "email": usuario[1],
+                    "tipo": usuario[2],
+                    "id_funcionario": usuario[3]
+                }
+
+            else:
+                print("\nEMAIL OU SENHA INCORRETOS!")
+                return None
+
+        except Exception as e:
+            print(f"Erro no login: {e}")
+            return None
+
+        finally:
+            conn.close()
 
     # 24/04/2026 Victor adicionando FR03 ( Função de registrar ponto automático)
     def registrar_ponto(self, id_funcionario):

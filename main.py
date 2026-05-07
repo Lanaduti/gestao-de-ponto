@@ -1,8 +1,23 @@
 from datetime import date, datetime
 from sistema_rh import  SistemaRH 
 
+def tela_login(sistema):
+    print("\n=== ACESSO AO SISTEMA ===")
+
+    while True:
+        email = input("Email: ")
+        senha = input("Senha: ")
+
+        if sistema.login(email, senha):
+            print("\nLogin realizado com sucesso!")
+            break
+        else:
+            print("\nEmail ou senha incorretos!")
+
 def iniciar_sistema():
     sistema = SistemaRH()
+    
+    tela_login(sistema)
 
     while True: 
         print("\n" + "="*35)
@@ -38,7 +53,7 @@ def iniciar_sistema():
                 sistema.registrar_ponto(id_func)
             except ValueError:
                 print(" ERRO: Por favor, digite apenas números para o ID!")
-
+                
         elif opcao == "3":
             print("\n---  CÁLCULO DE HORAS ---")
             try:

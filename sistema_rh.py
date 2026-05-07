@@ -187,57 +187,76 @@ class SistemaRH:
             finally:
                 conn.close()
 
-    # 29/04/2006 Victor adicionando FR07 ( O sistema deve permitir a visualização dos registros por mês e ano.)
-    def relatorio_mensal(self, id_funcionario, mes, ano):
-        """Gera um relatório de todos os pontos batidos em um mês específico."""
+    def registrar_ponto(self, id_funcionario):
+
         conn = conectar_banco()
+
         if conn:
             try:
                 cursor = conn.cursor()
 
-                sql = """
-                    SELECT data_registro, entrada, saida_intervalo, volta_intervalo, saida
-                    FROM  registro_ponto
-                    WHERE id_funcionario = %s
-                        AND EXTRACT(MONTH FROM data_registro) =%s
-                        AND EXTRACT( YEAR FROM data_registro) = %s
-                        ORDER BY data_registro ASC
-                        """
+                agora = datetime.now().time()
+                hoje = date.today()
 
-                cursor.execute(sql, (id_funcionario, mes, ano))
-                registros = cursor.fetchall()
+            # VERIFICA SE JÁ EXISTE REGISTRO HOJE
+                cursor.execute("""
+                    SELECT id FROM registro_ponto
+                    WHERE id_funcionario = %s AND data_registro = %s
+                """, (id_funcionario, hoje))
 
-                print("\n" + "=" * 70)
-                print(
-                    f"RELATÓRIO DE PONTO - MÊS {mes:02d}/{ano} (ID Funcionário: {id_funcionario})"
-                )
-                print("=" * 70)
+                registro = cursor.fetchone()
 
-                if not registros:
-                    print("Nenhum registro encontrado nesse período.")
+                if not registro:
+                # PRIMEIRA BATIDA (ENTRADA)
+                    cursor.execute("""
+                        INSERT INTO registro_ponto
+                        (id_funcionario, data_registro, entrada)
+                        VALUES (%s, %s, %s)
+                    """, (id_funcionario, hoje, agora))
+
+                    print("Entrada registrada com sucesso!")
+
                 else:
-                    print(
-                        f"{'DATA':<12} | {'ENTRADA':<10} | {'SAÍDA INT':<10} | {'VOLTA INT':<10} | {'SAÍDA':<10}"
-                    )
-                    print("-" * 70)
+                # ATUALIZA CICLO DO DIA
+                    cursor.execute("""
+                        SELECT entrada, saida_intervalo, volta_intervalo, saida
+                        FROM registro_ponto
+                        WHERE id_funcionario = %s AND data_registro = %s
+                    """, (id_funcionario, hoje))
 
-                    for reg in registros:
-                        data_formatada = reg[0].strftime("%d/%m/%Y")
+                    ponto = cursor.fetchone()
 
-                        entrada = str(reg[1]) if reg[1] else "---"
-                        saida_int = str(reg[2]) if reg[2] else "---"
-                        volta_int = str(reg[3]) if reg[3] else "---"
-                        saida = str(reg[4]) if reg[4] else "---"
+                    if ponto[0] and not ponto[1]:
+                        cursor.execute("""
+                            UPDATE registro_ponto
+                            SET saida_intervalo = %s
+                            WHERE id_funcionario = %s AND data_registro = %s
+                        """, (agora, id_funcionario, hoje))
+                        print("Saída para intervalo registrada!")
 
-                        print(
-                            f"{data_formatada:<12} | {entrada:<10} | {saida_int:<10} | {volta_int:<10} | {saida:<10}"
-                        )
+                    elif ponto[1] and not ponto[2]:
+                          cursor.execute("""
+                              UPDATE registro_ponto
+                              SET volta_intervalo = %s
+                              WHERE id_funcionario = %s AND data_registro = %s
+                          """, (agora, id_funcionario, hoje))
+                          print("Volta do intervalo registrada!")
 
-                print("=" * 70)
+                    elif ponto[2] and not ponto[3]:
+                          cursor.execute("""
+                              UPDATE registro_ponto
+                              SET saida = %s
+                              WHERE id_funcionario = %s AND data_registro = %s
+                          """, (agora, id_funcionario, hoje))
+                          print("Saída final registrada!")
+
+                conn.commit()
                 cursor.close()
 
             except Exception as e:
-                print(f"Erro ao gerar relátorio mensal: {e}")
+                print(f"Erro ao registrar ponto: {e}")
+                conn.rollback()
+
             finally:
                 conn.close()
 

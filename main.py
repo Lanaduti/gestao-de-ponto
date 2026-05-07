@@ -100,10 +100,10 @@ def iniciar_sistema():
  # Menu de gerenciamento de funcionário
         if opcao == "1":
             
-         subopcao = menu_funcionarios()
+            subopcao = menu_funcionarios()
 
 # Cadastro de funcionário
-         if subopcao == "1":
+        if subopcao == "1":
 
           print("\n--- NOVO CADASTRO ---")
 
@@ -127,7 +127,38 @@ def iniciar_sistema():
         elif subopcao == "2":
 
          sistema.listar_funcionarios()
+
+# Editar funcionários
+        elif subopcao == "3":
+
+                print("\n--- EDITAR FUNCIONÁRIO ---")
+
+                id_func = int(input("Digite o ID do funcionário: "))
+
+                novo_cargo = input("Novo cargo: ")
+                novo_setor = input("Novo setor: ")
+                novo_salario = float(input("Novo salário: "))
+
+                sistema.editar_funcionario(
+                    id_func,
+                    novo_cargo,
+                    novo_setor,
+                    novo_salario
+                )
         
+# Excluir funcionários        
+        elif subopcao == "4":
+
+                print("\n--- EXCLUIR FUNCIONÁRIO ---")
+
+                id_func = int(input("Digite o ID do funcionário: "))
+
+                sistema.excluir_funcionario(id_func)
+                
+        elif subopcao == "0":
+
+                continue
+
         elif opcao == "2":
             print("\n---  BATER PONTO ---")
             try:

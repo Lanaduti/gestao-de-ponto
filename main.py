@@ -1,5 +1,7 @@
 from datetime import date, datetime
 from sistema_rh import  SistemaRH 
+from menus.menu_admin import *
+from menus.menu_funcionario import *
 
 
 # Login do sistema 
@@ -23,58 +25,6 @@ def tela_login(sistema):
         else:
             print("\nEMAIL OU SENHA INCORRETOS!")
 
-# Menu princinpal ADM
-def menu_admin():
-
-    print("\n" + "="*35)
-    print("MENU ADMINISTRADOR")
-    print("="*35)
-
-    print("1 - Funcionários")
-    print("2 - Registro de Ponto")
-    print("3 - Banco de Horas")
-    print("4 - Folha de Pagamento")
-    print("5 - Escalas")
-    print("6 - Justificativas")
-    print("7 - Férias")
-    print("8 - Meu Perfil")
-    print("9 - Ajuda")
-    print("0 - Sair")
-
-    return input("\nEscolha uma opção: ")
-
-# Menu princinpal funcionários
-def menu_funcionario():
-
-    print("\n" + "="*35)
-    print("MENU FUNCIONÁRIO")
-    print("="*35)
-
-    print("1 - Registro de Ponto")
-    print("2 - Banco de Horas")
-    print("3 - Contracheque")
-    print("4 - Justificativas")
-    print("5 - Meu Perfil")
-    print("6 - Férias")
-    print("7 - Ajuda")
-    print("0 - Sair")
-
-    return input("\nEscolha uma opção: ")
-
-# Submenu de gerenciamento de funcionários
-def menu_funcionarios():
-
-    print("\n" + "="*35)
-    print("MENU FUNCIONÁRIOS")
-    print("="*35)
-
-    print("1 - Cadastrar Funcionário")
-    print("2 - Listar Funcionários")
-    print("3 - Editar Funcionário")
-    print("4 - Excluir Funcionário")
-    print("0 - Voltar")
-
-    return input("\nEscolha uma opção: ")
 
 def iniciar_sistema():
 
@@ -90,154 +40,280 @@ def iniciar_sistema():
 
     while True:
 
-# Exibe menus diferentes dependendo do tipo de usuário  
+        # MOSTRA MENU CONFORME O TIPO
         if tipo_usuario == "admin":
             opcao = menu_admin()
-            
+
         else:
             opcao = menu_funcionario()
+  
+        # ADMINISTRADOR
+    
+        if tipo_usuario == "admin":
 
- # Menu de gerenciamento de funcionário
-        if opcao == "1":
-            
-            subopcao = menu_funcionarios()
+            # FUNCIONÁRIOS
+            if opcao == "1":
 
-# Cadastro de funcionário
-        if subopcao == "1":
+                subopcao = submenu_funcionarios()
 
-          print("\n--- NOVO CADASTRO ---")
+                # CADASTRAR
+                if subopcao == "1":
 
-          nome = input("Digite o Nome: ")
-          cpf = input("Digite o CPF (só números): ")
-          cargo = input("Digite o Cargo: ")
-          setor = input("Digite o Setor: ")
+                    print("\n--- NOVO CADASTRO ---")
 
-          salario = float(input("Digite o Salário Base: "))
+                    nome = input("Digite o Nome: ")
+                    cpf = input("Digite o CPF: ")
+                    cargo = input("Digite o Cargo: ")
+                    setor = input("Digite o Setor: ")
 
-          sistema.cadastrar_funcionario(
-            nome,
-            cpf,
-            cargo,
-            setor,
-            salario,
-            date.today()
-        )
+                    salario = float(input("Digite o Salário Base: "))
 
-# Lista funcionários cadastrados
-        elif subopcao == "2":
+                    vale_transporte = input(
+                        "Utiliza vale transporte? (S/N): "
+                    ).strip().upper()
 
-         sistema.listar_funcionarios()
+                    sistema.cadastrar_funcionario(
+                        nome,
+                        cpf,
+                        cargo,
+                        setor,
+                        salario,
+                        vale_transporte,
+                        date.today()
+                    )
 
-# Editar funcionários
-        elif subopcao == "3":
+                # LISTAR
+                elif subopcao == "2":
 
-                print("\n--- EDITAR FUNCIONÁRIO ---")
+                    sistema.listar_funcionarios()
 
-                id_func = int(input("Digite o ID do funcionário: "))
+                # EDITAR
+                elif subopcao == "3":
 
-                novo_cargo = input("Novo cargo: ")
-                novo_setor = input("Novo setor: ")
-                novo_salario = float(input("Novo salário: "))
+                    print("\n--- EDITAR FUNCIONÁRIO ---")
 
-                sistema.editar_funcionario(
-                    id_func,
-                    novo_cargo,
-                    novo_setor,
-                    novo_salario
-                )
-        
-# Excluir funcionários        
-        elif subopcao == "4":
+                    id_func = int(input("Digite o ID: "))
 
-                print("\n--- EXCLUIR FUNCIONÁRIO ---")
+                    novo_nome = input("Novo nome: ")
+                    novo_cpf = input("Novo CPF: ")
+                    novo_cargo = input("Novo cargo: ")
+                    novo_setor = input("Novo setor: ")
+                    novo_salario = float(input("Novo salário: "))
 
-                id_func = int(input("Digite o ID do funcionário: "))
+                    sistema.editar_funcionario(
+                        id_func,
+                        novo_nome,
+                        novo_cpf,
+                        novo_cargo,
+                        novo_setor,
+                        novo_salario
+                    )
 
-                sistema.excluir_funcionario(id_func)
-                
-        elif subopcao == "0":
+                # EXCLUIR
+                elif subopcao == "4":
 
-                continue
+                    print("\n--- EXCLUIR FUNCIONÁRIO ---")
 
-        elif opcao == "2":
-            print("\n---  BATER PONTO ---")
-            try:
-                id_func = int(input("Digite o ID do funcionário (apenas o número): "))
-                sistema.registrar_ponto(id_func)
-            except ValueError:
-                print(" ERRO: Por favor, digite apenas números para o ID!")
-                
-        elif opcao == "3":
-            print("\n---  CÁLCULO DE HORAS ---")
-            try:
-                id_func = int(input("Digite o ID do funcionário (apenas o número): "))
-                sistema.calcular_horas_trabalhadas(id_func, date.today())
-            except ValueError:
-                print(" ERRO: Por favor, digite apenas números para o ID!")
+                    id_func = int(input("Digite o ID: "))
 
-        elif opcao == "4":
-            sistema.listar_funcionarios()
-            
-        elif opcao == "0":
-            print("\n Encerrando o sistema... Até logo!\n")
-            break
+                    sistema.excluir_funcionario(id_func)
 
-        elif opcao == "5": 
-            print ("\n --- Relátorio Mensal ---")
-            try: 
-                id_func = int(input("Digite o ID do funcionário: "))
-                mes = int(input("Digite o Mês (ex: 4 de Abril): "))
-                ano  =int(input("Digite o Ano (ex: 2026):"))
+            # PONTO
+            elif opcao == "2":
 
-                sistema.relatorio_mensal(id_func, mes, ano)
-            except ValueError :
-                print(" ERRO: Por favor, digite apenas números interios!")
+                subopcao = submenu_ponto()
 
-        elif opcao == "6": 
-            print("\n --- Exportar Relatório PDF ---")
-            try: 
-                id_func = int(input("Digite ID do funcionário:"))
-                mes = int(input("Digite o Mês (ex: 5 de Maio):"))
-                ano = int(input("Digite o ano (ex:2026):"))
+                if subopcao == "1":
 
-                sistema.exportar_relatorio_pdf(id_func, mes, ano)
-            except ValueError:
-                print("ERRO: Por favor, digite apenas números inteiros!")
+                    print("\n--- BATER PONTO ---")
 
-        elif opcao == "7":
-            print("\n---  ENVIAR JUSTIFICATIVA ---")
-            try:
-                id_func = int(input("Digite o ID do funcionário: "))
-                data_str = input("Digite a data da falta/atraso (DD/MM/AAAA): ")
-                data_falta = datetime.strptime(data_str, "%d/%m/%Y").date()
-                
-                motivo = input("Digite o motivo (ex: Consulta médica, Pneu furado): ")
-                comp = input("Haverá compensação de horas? (S/N): ").strip().upper()
-                compensacao = "Sim" if comp == "S" else "Não"
-                
-                sistema.enviar_justificativa(id_func, data_falta, motivo, compensacao)
-            except ValueError:
-                print(" ERRO: Verifique se o ID é apenas número e se a data está no formato correto (DD/MM/AAAA)!")
+                    id_func = int(input("Digite o ID: "))
 
-        elif opcao == "8":
-            print("\n---  ÁREA RESTRITA (ADMINISTRAÇÃO) ---")
-            email_admin = input("Digite o e-mail corporativo (Admin): ")
-            senha_admin = input("Digite a senha: ")
+                    sistema.registrar_ponto(id_func)
 
-            if sistema.verificar_admin(email_admin, senha_admin):
-                print("\n ACESSO LIBERADO! MODO EDIÇÃO ATIVADO.")
-                try:
-                    id_func = int(input("Digite o ID do funcionário que será alterado: "))
-                    print("\n-- Preencha os novos dados --")
-                    novo_cargo = input("Novo Cargo: ")
-                    novo_setor = input("Novo Setor: ")
-                    novo_salario = float(input("Novo Salário Base (ex: 4500.00): "))
-                    
-                    sistema.editar_funcionario(id_func, novo_cargo, novo_setor, novo_salario)
-                except ValueError:
-                    print(" ERRO: O ID e o Salário precisam ser apenas números!")
-            else:
-                print("\n ACESSO NEGADO: E-mail/Senha incorretos ou perfil sem permissão de Administrador!")
+                elif subopcao == "2":
+
+                    print("\n--- HORAS TRABALHADAS ---")
+
+                    id_func = int(input("Digite o ID: "))
+
+                    sistema.calcular_horas_trabalhadas(
+                        id_func,
+                        date.today()
+                    )
+
+            # BANCO DE HORAS
+            elif opcao == "3":
+
+                subopcao = submenu_banco_horas_admin()
+
+                if subopcao == "1":
+
+                    print("\n--- CONSULTAR HORAS ---")
+
+                    id_func = int(input("Digite o ID: "))
+
+                    sistema.calcular_horas_trabalhadas(
+                        id_func,
+                        date.today()
+                    )
+
+            # FOLHA
+            elif opcao == "4":
+
+                subopcao = submenu_folha()
+
+                if subopcao == "1":
+
+                    print("\n--- CONTRACHEQUE ---")
+
+                    id_func = int(input("Digite o ID: "))
+
+                    sistema.gerar_contracheque(id_func)
+
+                elif subopcao == "2":
+
+                    print("\n--- EXPORTAR PDF ---")
+
+                    id_func = int(input("Digite o ID: "))
+                    mes = int(input("Digite o mês: "))
+                    ano = int(input("Digite o ano: "))
+
+                    sistema.exportar_relatorio_pdf(
+                        id_func,
+                        mes,
+                        ano
+                    )
+
+            # JUSTIFICATIVAS
+            elif opcao == "6":
+
+                subopcao = submenu_justificativas()
+
+                # LISTAR
+                if subopcao == "1":
+
+                    sistema.listar_justificativas()
+
+                # APROVAR
+                elif subopcao == "2":
+
+                    id_just = int(input("Digite o ID da justificativa: "))
+
+                    sistema.atualizar_status_justificativa(
+                        id_just,
+                        "Aprovada"
+                    )
+
+                # REJEITAR
+                elif subopcao == "3":
+
+                    id_just = int(input("Digite o ID da justificativa: "))
+
+                    sistema.atualizar_status_justificativa(
+                        id_just,
+                        "Rejeitada"
+                    )
+
+            elif opcao == "0":
+
+                print("\nENCERRANDO SISTEMA...")
+
+                break
+
+            elif opcao in ["5", "7", "8", "9"]:
+
+                print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO.")
+
+        # FUNCIONÁRIO
+
+        else:
+
+            # PONTO
+            if opcao == "1":
+
+                subopcao = submenu_ponto_funcionario()
+
+                if subopcao == "1":
+
+                    id_func = int(input("Digite seu ID: "))
+
+                    sistema.registrar_ponto(id_func)
+
+                elif subopcao == "2":
+
+                    id_func = int(input("Digite seu ID: "))
+
+                    sistema.calcular_horas_trabalhadas(
+                        id_func,
+                        date.today()
+                    )
+
+            # BANCO DE HORAS
+            elif opcao == "2":
+
+                subopcao = submenu_banco_horas_funcionario()
+
+                if subopcao == "1":
+
+                    id_func = int(input("Digite seu ID: "))
+
+                    sistema.calcular_horas_trabalhadas(
+                        id_func,
+                        date.today()
+                    )
+
+            # CONTRACHEQUE
+            elif opcao == "3":
+
+                subopcao = submenu_contracheque_funcionario()
+
+                if subopcao == "1":
+
+                    id_func = int(input("Digite seu ID: "))
+
+                    sistema.gerar_contracheque(id_func)
+
+            # JUSTIFICATIVA
+            elif opcao == "4":
+
+                subopcao = submenu_justificativa_funcionario()
+
+                if subopcao == "1":
+
+                    id_func = int(input("Digite seu ID: "))
+
+                    data_str = input("Digite a data: ")
+
+                    data_falta = datetime.strptime(
+                        data_str,
+                        "%d/%m/%Y"
+                    ).date()
+
+                    motivo = input("Digite o motivo: ")
+
+                    comp = input(
+                        "Haverá compensação? (S/N): "
+                    ).strip().upper()
+
+                    compensacao = "Sim" if comp == "S" else "Não"
+
+                    sistema.enviar_justificativa(
+                        id_func,
+                        data_falta,
+                        motivo,
+                        compensacao
+                    )
+
+            elif opcao == "0":
+
+                print("\nENCERRANDO SISTEMA...")
+
+                break
+
+            elif opcao in ["5", "6", "7"]:
+
+                print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO.")
 
 if __name__ == "__main__":
-    iniciar_sistema() 
+    iniciar_sistema()

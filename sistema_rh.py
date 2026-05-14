@@ -11,18 +11,31 @@ class SistemaRH:
         pass
 
     def cadastrar_funcionario(
-        self, nome, cpf, cargo, setor, salario_base, data_admissao
+        self, nome, cpf, cargo, setor, salario_base, vale_transporte, data_admissao
     ):
         conn = conectar_banco()
 
         if conn:
             try:
                 cursor = conn.cursor()
+                
+                # VERIFICA SE O CPF JÁ EXISTE
+                cursor.execute(
+                    "SELECT id FROM funcionario WHERE cpf = %s",
+                    (cpf,)
+                )
+
+                cpf_existente = cursor.fetchone()
+
+                if cpf_existente:
+                    print("ERRO: Já existe um funcionário cadastrado com esse CPF!")
+                    return False
+
                 sql = """
-                    INSERT INTO funcionario (nome, cpf, cargo, setor, salario_base, data_admissao)
-                    VALUES (%s, %s, %s, %s, %s, %s) RETURNING id 
+                    INSERT INTO funcionario ( nome, cpf, cargo, setor, salario_base, vale_transporte, data_admissao)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id 
                 """
-                valores = (nome, cpf, cargo, setor, salario_base, data_admissao)
+                valores = (nome, cpf, cargo, setor, salario_base, vale_transporte, data_admissao)
                 cursor.execute(sql, valores)
                 id_gerado = cursor.fetchone()[0]
                 conn.commit()
@@ -72,6 +85,104 @@ class SistemaRH:
                 conn.close()
         else:
             print("Sem conexão com o banco de dados.")
+
+    def editar_funcionario(
+        self,
+        id_funcionario,
+        nome,
+        cpf,
+        cargo,
+        setor,
+        salario_base
+    ):
+
+        conn = conectar_banco()
+
+        if conn:
+            try:
+                cursor = conn.cursor()
+
+            # VERIFICA SE O CPF JÁ EXISTE EM OUTRO FUNCIONÁRIO
+                cursor.execute(
+                    """
+                    SELECT id FROM funcionario
+                    WHERE cpf = %s AND id != %s
+                    """,
+                    (cpf, id_funcionario)
+                )
+
+                cpf_existente = cursor.fetchone()
+
+                if cpf_existente:
+                    print("ERRO: CPF já cadastrado em outro funcionário!")
+                    return
+
+                sql = """
+                    UPDATE funcionario
+                    SET nome = %s,
+                        cpf = %s,
+                        cargo = %s,
+                        setor = %s,
+                        salario_base = %s
+                    WHERE id = %s
+                """
+
+                cursor.execute(
+                    sql,
+                    (
+                        nome,
+                        cpf,
+                        cargo,
+                        setor,
+                        salario_base,
+                        id_funcionario
+                    )
+                )
+
+                conn.commit()
+
+                if cursor.rowcount > 0:
+                    print(f"Funcionário ID {id_funcionario} atualizado com sucesso!")
+
+                else:
+                    print("Funcionário não encontrado.")
+
+                cursor.close()
+
+            except Exception as e:
+                print(f"Erro ao editar funcionário: {e}")
+                conn.rollback()
+
+            finally:
+                conn.close()
+
+    def excluir_funcionario(self, id_funcionario):
+
+        conn = conectar_banco()
+
+        if conn:
+            try:
+                cursor = conn.cursor()
+
+                sql = "DELETE FROM funcionario WHERE id = %s"
+
+                cursor.execute(sql, (id_funcionario,))
+                conn.commit()
+
+                if cursor.rowcount > 0:
+                    print(f"Funcionário ID {id_funcionario} excluído com sucesso!")
+
+                else:
+                    print("Funcionário não encontrado.")
+
+                cursor.close()
+
+            except Exception as e:
+                print(f"Erro ao excluir funcionário: {e}")
+                conn.rollback()
+
+            finally:
+                conn.close()
 
     # 22/04/2026 Victor adicionando FR02 (Função criar usuário e função de login)
     def cadastrar_usuario(self, email, senha, tipo, id_funcionario):
@@ -187,6 +298,67 @@ class SistemaRH:
             finally:
                 conn.close()
 
+    def gerar_contracheque(self, id_funcionario):
+
+        conn = conectar_banco()
+
+        if conn:
+            try:
+                cursor = conn.cursor()
+
+                sql = """
+                    SELECT nome, cargo, salario_base, vale_transporte
+                    FROM funcionario
+                    WHERE id = %s
+                """
+
+                cursor.execute(sql, (id_funcionario,))
+                funcionario = cursor.fetchone()
+
+                if not funcionario:
+                    print("Funcionário não encontrado.")
+                    return
+
+                nome = funcionario[0]
+                cargo = funcionario[1]
+                salario_base = float(funcionario[2])
+                vale_transporte = funcionario[3]
+
+            # DESCONTO VT
+                desconto_vt = 0
+
+                if vale_transporte == "S":
+                    desconto_vt = salario_base * 0.06
+
+            # INSS SIMPLES
+                desconto_inss = salario_base * 0.08
+
+                salario_liquido = (
+                    salario_base
+                    - desconto_vt
+                    - desconto_inss
+                )
+
+                print("\n===== CONTRACHEQUE =====")
+                print(f"Funcionário: {nome}")
+                print(f"Cargo: {cargo}")
+
+                print(f"\nSalário Base: R$ {salario_base:.2f}")
+                print(f"Desconto VT: R$ {desconto_vt:.2f}")
+                print(f"INSS: R$ {desconto_inss:.2f}")
+
+                print("-" * 30)
+
+                print(f"SALÁRIO LÍQUIDO: R$ {salario_liquido:.2f}")
+
+                cursor.close()
+
+            except Exception as e:
+                print(f"Erro ao gerar contracheque: {e}")
+
+            finally:
+                conn.close()
+  
     def registrar_ponto(self, id_funcionario):
 
         conn = conectar_banco()
@@ -243,12 +415,15 @@ class SistemaRH:
                           print("Volta do intervalo registrada!")
 
                     elif ponto[2] and not ponto[3]:
+                          
                           cursor.execute("""
                               UPDATE registro_ponto
                               SET saida = %s
                               WHERE id_funcionario = %s AND data_registro = %s
                           """, (agora, id_funcionario, hoje))
                           print("Saída final registrada!")
+                    else:
+                        print("Todos os pontos do dia já foram registrados!")
 
                 conn.commit()
                 cursor.close()
@@ -392,6 +567,92 @@ class SistemaRH:
             except Exception as e:
                 print(f" Erro ao enviar justificativa: {e}")
                 conn.rollback()
+            finally:
+                conn.close()
+
+    def listar_justificativas(self):
+
+        conn = conectar_banco()
+
+        if conn:
+            try:
+               cursor = conn.cursor()
+
+               sql = """
+                   SELECT
+                       rj.id,
+                       f.nome,
+                       rj.data_falta,
+                       rj.motivo,
+                       rj.compensacao,
+                       rj.status
+                    FROM registro_justificativa rj
+                    JOIN funcionario f
+                    ON rj.id_funcionario = f.id
+                    ORDER BY rj.data_envio DESC
+                """
+
+               cursor.execute(sql)
+
+               justificativas = cursor.fetchall()
+
+               print("\n--- JUSTIFICATIVAS ---")
+
+               if not justificativas:
+                   print("Nenhuma justificativa encontrada.")
+
+               else:
+                   for j in justificativas:
+                       print(
+                           f"""
+    ID: {j[0]}
+    Funcionário: {j[1]}
+    Data: {j[2]}
+    Motivo: {j[3]}
+    Compensação: {j[4]}
+    Status: {j[5]}
+    -------------------------
+    """
+                        )
+
+               cursor.close()
+
+            except Exception as e:
+                print(f"Erro ao listar justificativas: {e}")
+
+            finally:
+                conn.close()
+
+    def atualizar_status_justificativa(self, id_justificativa, status):
+
+        conn = conectar_banco()
+
+        if conn:
+            try:
+                cursor = conn.cursor()
+
+                sql = """
+                    UPDATE registro_justificativa
+                    SET status = %s
+                    WHERE id = %s
+                """
+
+                cursor.execute(sql, (status, id_justificativa))
+
+                conn.commit()
+
+                if cursor.rowcount > 0:
+                    print("Status atualizado com sucesso!")
+
+                else:
+                    print("Justificativa não encontrada.")
+
+                cursor.close()
+
+            except Exception as e:
+                print(f"Erro ao atualizar justificativa: {e}")
+                conn.rollback()
+
             finally:
                 conn.close()
 

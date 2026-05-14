@@ -1,11 +1,17 @@
 from datetime import date, datetime
-from sistema_rh import  SistemaRH 
+
 from menus.menu_admin import *
 from menus.menu_funcionario import *
 
+from services.funcionario_service import *
+from services.usuario_service import *
+from services.ponto_service import *
+from services.folha_service import *
+from services.justificativa_service import *
+
 
 # Login do sistema 
-def tela_login(sistema):
+def tela_login():
 
     print("\n===== LOGIN DO SISTEMA =====")
 
@@ -14,7 +20,7 @@ def tela_login(sistema):
         email = input("E-mail: ")
         senha = input("Senha: ")
 
-        usuario = sistema.login(email, senha)
+        usuario = login(email, senha)
 
         if usuario:
 
@@ -27,11 +33,9 @@ def tela_login(sistema):
 
 
 def iniciar_sistema():
-
-    sistema = SistemaRH()
     
  # Guarda informações do usuário logado 
-    usuario_logado = tela_login(sistema)
+    usuario_logado = tela_login()
 
     print(f"\nTIPO DE USUÁRIO: {usuario_logado['tipo']}")
 
@@ -72,7 +76,7 @@ def iniciar_sistema():
                         "Utiliza vale transporte? (S/N): "
                     ).strip().upper()
 
-                    sistema.cadastrar_funcionario(
+                    cadastrar_funcionario(
                         nome,
                         cpf,
                         cargo,
@@ -85,7 +89,7 @@ def iniciar_sistema():
                 # LISTAR
                 elif subopcao == "2":
 
-                    sistema.listar_funcionarios()
+                    listar_funcionarios()
 
                 # EDITAR
                 elif subopcao == "3":
@@ -100,7 +104,7 @@ def iniciar_sistema():
                     novo_setor = input("Novo setor: ")
                     novo_salario = float(input("Novo salário: "))
 
-                    sistema.editar_funcionario(
+                    editar_funcionario(
                         id_func,
                         novo_nome,
                         novo_cpf,
@@ -116,7 +120,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite o ID: "))
 
-                    sistema.excluir_funcionario(id_func)
+                    excluir_funcionario(id_func)
 
             # PONTO
             elif opcao == "2":
@@ -129,7 +133,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite o ID: "))
 
-                    sistema.registrar_ponto(id_func)
+                    registrar_ponto(id_func)
 
                 elif subopcao == "2":
 
@@ -137,7 +141,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite o ID: "))
 
-                    sistema.calcular_horas_trabalhadas(
+                    calcular_horas_trabalhadas(
                         id_func,
                         date.today()
                     )
@@ -153,7 +157,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite o ID: "))
 
-                    sistema.calcular_horas_trabalhadas(
+                    calcular_horas_trabalhadas(
                         id_func,
                         date.today()
                     )
@@ -169,7 +173,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite o ID: "))
 
-                    sistema.gerar_contracheque(id_func)
+                    gerar_contracheque(id_func)
 
                 elif subopcao == "2":
 
@@ -179,7 +183,7 @@ def iniciar_sistema():
                     mes = int(input("Digite o mês: "))
                     ano = int(input("Digite o ano: "))
 
-                    sistema.exportar_relatorio_pdf(
+                    exportar_relatorio_pdf(
                         id_func,
                         mes,
                         ano
@@ -193,14 +197,14 @@ def iniciar_sistema():
                 # LISTAR
                 if subopcao == "1":
 
-                    sistema.listar_justificativas()
+                    listar_justificativas()
 
                 # APROVAR
                 elif subopcao == "2":
 
                     id_just = int(input("Digite o ID da justificativa: "))
 
-                    sistema.atualizar_status_justificativa(
+                    atualizar_status_justificativa(
                         id_just,
                         "Aprovada"
                     )
@@ -210,7 +214,7 @@ def iniciar_sistema():
 
                     id_just = int(input("Digite o ID da justificativa: "))
 
-                    sistema.atualizar_status_justificativa(
+                    atualizar_status_justificativa(
                         id_just,
                         "Rejeitada"
                     )
@@ -238,13 +242,13 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite seu ID: "))
 
-                    sistema.registrar_ponto(id_func)
+                    registrar_ponto(id_func)
 
                 elif subopcao == "2":
 
                     id_func = int(input("Digite seu ID: "))
 
-                    sistema.calcular_horas_trabalhadas(
+                    calcular_horas_trabalhadas(
                         id_func,
                         date.today()
                     )
@@ -258,7 +262,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite seu ID: "))
 
-                    sistema.calcular_horas_trabalhadas(
+                    calcular_horas_trabalhadas(
                         id_func,
                         date.today()
                     )
@@ -272,7 +276,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite seu ID: "))
 
-                    sistema.gerar_contracheque(id_func)
+                    gerar_contracheque(id_func)
 
             # JUSTIFICATIVA
             elif opcao == "4":
@@ -298,7 +302,7 @@ def iniciar_sistema():
 
                     compensacao = "Sim" if comp == "S" else "Não"
 
-                    sistema.enviar_justificativa(
+                    enviar_justificativa(
                         id_func,
                         data_falta,
                         motivo,

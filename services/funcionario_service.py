@@ -40,23 +40,13 @@ def cadastrar_funcionario(
                     data_admissao
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
             """
-
-            valores = (
-                nome,
-                cpf,
-                cargo,
-                setor,
-                salario_base,
-                vale_transporte,
-                data_admissao
-            )
-
-            cursor.execute(sql, valores)
-
+            cursor.execute(sql,valores)
+            id_gerado = cursor.fetchone()[0]
             conn.commit()
-
             print(f"{nome} cadastrado com sucesso!")
+            return id_gerado
 
         except Exception as e:
             print(f"Erro: {e}")
@@ -75,12 +65,15 @@ def listar_funcionarios():
             cursor = conn.cursor()
 
             sql = """
-                SELECT
-                    id,
-                    nome,
-                    cargo,
-                    data_admissao
-                FROM funcionario
+               SELECT
+                   f.id,
+                   f.nome,
+                   f.cargo,
+                   f.data_admissao,
+                   u.email
+               FROM funcionario f
+               LEFT JOIN usuario u
+               ON f.id = u.id_funcionario
             """
 
             cursor.execute(sql)
@@ -97,6 +90,7 @@ ID: {f[0]}
 Nome: {f[1]}
 Cargo: {f[2]}
 Admissão: {f[3]}
+E-mail: {f[4]}
 ------------------------
 """
                 )
@@ -178,4 +172,38 @@ def excluir_funcionario(id_funcionario):
             conn.rollback()
 
         finally:
+            conn.close()
+
+def buscar_funcionario(id_funcionario):
+
+    conn = conectar_banco()
+
+    if conn:
+        try:
+
+            cursor = conn.cursor()
+
+            sql = """
+                SELECT
+                    nome,
+                    cpf,
+                    cargo,
+                    setor,
+                    salario_base
+                FROM funcionario
+                WHERE id = %s
+            """
+
+            cursor.execute(sql, (id_funcionario,))
+
+            funcionario = cursor.fetchone()
+
+            return funcionario
+
+        except Exception as e:
+
+            print(f"Erro: {e}")
+
+        finally:
+
             conn.close()

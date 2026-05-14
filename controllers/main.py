@@ -1,8 +1,7 @@
+from services.perfil_service import *
 from datetime import date, datetime
-
 from menus.menu_admin import *
 from menus.menu_funcionario import *
-
 from services.funcionario_service import *
 from services.usuario_service import *
 from services.ponto_service import *
@@ -10,32 +9,64 @@ from services.folha_service import *
 from services.justificativa_service import *
 
 
-# Login do sistema 
 def tela_login():
-
-    print("\n===== LOGIN DO SISTEMA =====")
 
     while True:
 
-        email = input("E-mail: ")
-        senha = input("Senha: ")
+        print("""
+1 - Login
+2 - Esqueci minha senha
+0 - Sair
+""")
 
-        usuario = login(email, senha)
+        opcao = input("Escolha uma opção: ")
 
-        if usuario:
+        # LOGIN
+        if opcao == "1":
 
-            print("\nLOGIN REALIZADO COM SUCESSO!")
+            email = input("E-mail: ")
+            senha = input("Senha: ")
 
-            return usuario
+            usuario = login(email, senha)
+            
+            if usuario:
+
+                print("\nLOGIN REALIZADO COM SUCESSO!")
+                
+                return usuario
+            
+            else:
+
+                  print("\nEMAIL OU SENHA INCORRETOS!")
+                
+        elif opcao == "2":
+            
+            email = input("Digite seu e-mail (0 para sair): ")
+            
+            if email == "0":
+                continue
+
+            nova_senha = input("Digite sua nova senha: ")
+
+            redefinir_senha(email, nova_senha)
+
+        # SAIR
+        elif opcao == "0":
+
+            print("Saindo do sistema...")
+
+            exit()
 
         else:
-            print("\nEMAIL OU SENHA INCORRETOS!")
 
+            print("Opção inválida!")
 
 def iniciar_sistema():
     
  # Guarda informações do usuário logado 
     usuario_logado = tela_login()
+
+    print(usuario_logado)
 
     print(f"\nTIPO DE USUÁRIO: {usuario_logado['tipo']}")
 
@@ -43,6 +74,8 @@ def iniciar_sistema():
     tipo_usuario = usuario_logado["tipo"]
 
     while True:
+
+        subopcao = None
 
         # MOSTRA MENU CONFORME O TIPO
         if tipo_usuario == "admin":
@@ -70,56 +103,95 @@ def iniciar_sistema():
                     cargo = input("Digite o Cargo: ")
                     setor = input("Digite o Setor: ")
 
-                    salario = float(input("Digite o Salário Base: "))
+                    salario_input = input("Novo salário: ")
+
+                    novo_salario = float(salario_input) if salario_input else 0
 
                     vale_transporte = input(
                         "Utiliza vale transporte? (S/N): "
                     ).strip().upper()
 
-                    cadastrar_funcionario(
-                        nome,
-                        cpf,
-                        cargo,
-                        setor,
-                        salario,
-                        vale_transporte,
-                        date.today()
+                    email = input("Digite o e-mail do funcionário: ")
+
+                    id_funcionario = cadastrar_funcionario(
+                        nome,cpf,cargo,setor,
+                        novo_salario,vale_transporte, date.today()
                     )
 
-                # LISTAR
+                    print("DEBUG ID GERADO:", id_funcionario)
+                    
+                    if id_funcionario:
+                        cadastrar_usuario(email, "", "funcionario", id_funcionario)
+                        print("""
+Funcionário cadastrado!
+
+O colaborador deverá usar
+"Esqueci minha senha"
+para criar a senha inicial.
+""")
+                    
+                    else:
+                        print("Erro ao cadastrar funcionário!")
+    
                 elif subopcao == "2":
-
+                    
                     listar_funcionarios()
-
-                # EDITAR
+                    
                 elif subopcao == "3":
-
+                    
                     print("\n--- EDITAR FUNCIONÁRIO ---")
-
+                    
                     id_func = int(input("Digite o ID: "))
+                    funcionario = buscar_funcionario(id_func)
+                    
+                    if funcionario:
 
-                    novo_nome = input("Novo nome: ")
-                    novo_cpf = input("Novo CPF: ")
-                    novo_cargo = input("Novo cargo: ")
-                    novo_setor = input("Novo setor: ")
-                    novo_salario = float(input("Novo salário: "))
+                        novo_nome = input(
+                            f"Novo nome ({funcionario[0]}): "
+                        ) or funcionario[0]
 
-                    editar_funcionario(
-                        id_func,
-                        novo_nome,
-                        novo_cpf,
-                        novo_cargo,
-                        novo_setor,
-                        novo_salario
-                    )
+                        novo_cpf = input(
+                            f"Novo CPF ({funcionario[1]}): "
+                        ) or funcionario[1]
+
+                        novo_cargo = input(
+                            f"Novo cargo ({funcionario[2]}): "
+                        ) or funcionario[2]
+
+                        novo_setor = input(
+                            f"Novo setor ({funcionario[3]}): "
+                        ) or funcionario[3]
+
+                        salario_input = input(
+                            f"Novo salário ({funcionario[4]}): "
+                        )
+ 
+                        novo_salario = (
+                            float(salario_input)
+                            if salario_input
+                            else funcionario[4]
+                        )
+
+                        editar_funcionario(
+                            id_func,
+                            novo_nome,
+                            novo_cpf,
+                            novo_cargo,
+                            novo_setor,
+                            novo_salario
+                        )
+
+                    else:
+           
+                        print("Funcionário não encontrado.")
 
                 # EXCLUIR
                 elif subopcao == "4":
-
+                
                     print("\n--- EXCLUIR FUNCIONÁRIO ---")
-
+                
                     id_func = int(input("Digite o ID: "))
-
+                
                     excluir_funcionario(id_func)
 
             # PONTO
@@ -141,10 +213,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite o ID: "))
 
-                    calcular_horas_trabalhadas(
-                        id_func,
-                        date.today()
-                    )
+                    calcular_horas_trabalhadas(id_func, date.today())
 
             # BANCO DE HORAS
             elif opcao == "3":
@@ -157,10 +226,13 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite o ID: "))
 
-                    calcular_horas_trabalhadas(
-                        id_func,
-                        date.today()
-                    )
+                    calcular_horas_trabalhadas(id_func, date.today())
+
+                elif subopcao == "2":
+
+                   id_func = int(input("Digite o ID: "))
+
+                   ver_banco_horas(id_func)
 
             # FOLHA
             elif opcao == "4":
@@ -183,11 +255,7 @@ def iniciar_sistema():
                     mes = int(input("Digite o mês: "))
                     ano = int(input("Digite o ano: "))
 
-                    exportar_relatorio_pdf(
-                        id_func,
-                        mes,
-                        ano
-                    )
+                    exportar_relatorio_pdf(id_func, mes, ano)
 
             # JUSTIFICATIVAS
             elif opcao == "6":
@@ -204,30 +272,30 @@ def iniciar_sistema():
 
                     id_just = int(input("Digite o ID da justificativa: "))
 
-                    atualizar_status_justificativa(
-                        id_just,
-                        "Aprovada"
-                    )
+                    atualizar_status_justificativa(id_just, "Aprovada")
 
                 # REJEITAR
                 elif subopcao == "3":
 
                     id_just = int(input("Digite o ID da justificativa: "))
 
-                    atualizar_status_justificativa(
-                        id_just,
-                        "Rejeitada"
-                    )
+                    atualizar_status_justificativa(id_just, "Rejeitada")
 
-            elif opcao == "0":
+                elif opcao == "8":
+                    
+                    id_func = usuario_logado["id_funcionario"]
+                    
+                    visualizar_perfil(id_func)
+                                
+                elif opcao == "0":
 
-                print("\nENCERRANDO SISTEMA...")
+                    print("\nENCERRANDO SISTEMA...")
+                     
+                    break
 
-                break
+                elif opcao in ["5", "7", "9"]:
 
-            elif opcao in ["5", "7", "8", "9"]:
-
-                print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO.")
+                    print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO.")
 
         # FUNCIONÁRIO
 
@@ -248,10 +316,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite seu ID: "))
 
-                    calcular_horas_trabalhadas(
-                        id_func,
-                        date.today()
-                    )
+                    calcular_horas_trabalhadas(id_func, date.today())
 
             # BANCO DE HORAS
             elif opcao == "2":
@@ -262,10 +327,7 @@ def iniciar_sistema():
 
                     id_func = int(input("Digite seu ID: "))
 
-                    calcular_horas_trabalhadas(
-                        id_func,
-                        date.today()
-                    )
+                    calcular_horas_trabalhadas(id_func, date.today())
 
             # CONTRACHEQUE
             elif opcao == "3":
@@ -290,8 +352,7 @@ def iniciar_sistema():
                     data_str = input("Digite a data: ")
 
                     data_falta = datetime.strptime(
-                        data_str,
-                        "%d/%m/%Y"
+                        data_str,"%d/%m/%Y"
                     ).date()
 
                     motivo = input("Digite o motivo: ")
@@ -308,14 +369,25 @@ def iniciar_sistema():
                         motivo,
                         compensacao
                     )
-
+                    
+            elif opcao == "5":
+                
+                id_func = usuario_logado["id_funcionario"]
+                visualizar_perfil(id_func)
+                                
+            elif opcao == "8":
+                
+                print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO")
+                
+                                
             elif opcao == "0":
-
+                
                 print("\nENCERRANDO SISTEMA...")
-
+                     
                 break
 
-            elif opcao in ["5", "6", "7"]:
+
+            elif opcao in ["6", "7"]:
 
                 print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO.")
 

@@ -1,4 +1,4 @@
-from conexao import conectar_banco
+from config.conexao import conectar_banco
 
 
 def cadastrar_funcionario(
@@ -42,6 +42,7 @@ def cadastrar_funcionario(
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
             """
+            valores = (nome, cpf, cargo, setor, salario_base, vale_transporte, data_admissao)
             cursor.execute(sql,valores)
             id_gerado = cursor.fetchone()[0]
             conn.commit()

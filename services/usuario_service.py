@@ -1,6 +1,6 @@
 import bcrypt
 
-from conexao import conectar_banco
+from config.conexao import conectar_banco
 
 
 def cadastrar_usuario(

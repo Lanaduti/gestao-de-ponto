@@ -1,5 +1,5 @@
 from fpdf import FPDF
-from conexao import conectar_banco
+from config.conexao import conectar_banco
 
 
 def gerar_contracheque(id_funcionario):

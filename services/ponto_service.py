@@ -198,3 +198,34 @@ Total horas trabalhadas:
 
         finally:
             conn.close()
+
+def verificar_ponto_aberto(id_funcionario):
+
+    conn = conectar_banco()
+
+    if conn:
+        try:
+            cursor = conn.cursor()
+
+            ontem = date.today() - _import_('datetime').timedelta(days=1)
+
+            cursor.execute("""
+                SELECT data_registro, entrada
+                FROM registro_ponto
+                WHERE id_funcionario = %s
+                AND data_registro = %s
+                AND entrada IS NOT NULL
+                AND saida IS NULL
+            """, (id_funcionario, ontem))
+
+            ponto_aberto = cursor.fetchone()
+
+            if ponto_aberto:
+                print(f"\n⚠️  ATENÇÃO: Você não registrou a saída do dia {ponto_aberto[0]}!")
+                print("Entre em contato com o RH ou envie uma justificativa.\n")
+
+        except Exception as e:
+            print(f"Erro: {e}")
+
+        finally:
+            conn.close()

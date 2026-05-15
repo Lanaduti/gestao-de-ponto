@@ -31,9 +31,8 @@ def tela_login():
             
             if usuario:
 
-                print("\nLOGIN REALIZADO COM SUCESSO!")
-                
-                return usuario
+                    print(f"\nBEM-VINDO(A), {usuario['email'].split('@')[0].upper()}! 👋")
+                    return usuario
             
             else:
 
@@ -66,10 +65,6 @@ def iniciar_sistema():
  # Guarda informações do usuário logado 
     usuario_logado = tela_login()
 
-    print(usuario_logado)
-
-    print(f"\nTIPO DE USUÁRIO: {usuario_logado['tipo']}")
-
 # Verifica o tipo de usuário para liberar menus diferentes
     tipo_usuario = usuario_logado["tipo"]
 
@@ -99,7 +94,12 @@ def iniciar_sistema():
                     print("\n--- NOVO CADASTRO ---")
 
                     nome = input("Digite o Nome: ")
-                    cpf = input("Digite o CPF: ")
+                    while True:
+                        cpf = input("Digite o CPF (somente números, 11 dígitos): ").strip()
+                        if len(cpf) == 11 and cpf.isdigit():
+                            break
+                        print("⚠️  CPF inválido! Digite apenas os 11 números.")
+
                     cargo = input("Digite o Cargo: ")
                     setor = input("Digite o Setor: ")
 
@@ -111,14 +111,16 @@ def iniciar_sistema():
                         "Utiliza vale transporte? (S/N): "
                     ).strip().upper()
 
-                    email = input("Digite o e-mail do funcionário: ")
+                    while True:
+                        email = input("Digite o e-mail do funcionário: ").strip()
+                        if "@" in email and "." in email.split("@")[-1]:
+                            break
+                        print("⚠️  E-mail inválido! Digite um e-mail válido (ex: nome@gmail.com)")
 
                     id_funcionario = cadastrar_funcionario(
                         nome,cpf,cargo,setor,
                         novo_salario,vale_transporte, date.today()
                     )
-
-                    print("DEBUG ID GERADO:", id_funcionario)
                     
                     if id_funcionario:
                         cadastrar_usuario(email, "", "funcionario", id_funcionario)
@@ -248,14 +250,18 @@ para criar a senha inicial.
                     gerar_contracheque(id_func)
 
                 elif subopcao == "2":
-
+                     
                     print("\n--- EXPORTAR PDF ---")
-
                     id_func = int(input("Digite o ID: "))
-                    mes = int(input("Digite o mês: "))
-                    ano = int(input("Digite o ano: "))
-
-                    exportar_relatorio_pdf(id_func, mes, ano)
+                    print("Data de início:")
+                    dia_i = int(input("  Dia: "))
+                    mes_i = int(input("  Mês: "))
+                    ano_i = int(input("  Ano: "))
+                    print("Data de fim:")
+                    dia_f = int(input("  Dia: "))
+                    mes_f = int(input("  Mês: "))
+                    ano_f = int(input("  Ano: "))
+                    exportar_relatorio_pdf(id_func, dia_i, mes_i, ano_i, dia_f, mes_f, ano_f)
 
             # JUSTIFICATIVAS
             elif opcao == "6":
@@ -281,21 +287,26 @@ para criar a senha inicial.
 
                     atualizar_status_justificativa(id_just, "Rejeitada")
 
-                elif opcao == "8":
-                    
-                    id_func = usuario_logado["id_funcionario"]
-                    
-                    visualizar_perfil(id_func)
+            
+            elif opcao == "8":
+                print(f"""
+            ===========================
+            MEU PERFIL
+            ===========================
+            E-mail: {usuario_logado['email']}
+            Tipo: Administrador
+            ===========================
+            """)
                                 
-                elif opcao == "0":
+            elif opcao == "0":
 
-                    print("\nENCERRANDO SISTEMA...")
+                print("\nENCERRANDO SISTEMA...")
                      
-                    break
+                break
 
-                elif opcao in ["5", "7", "9"]:
+            elif opcao in ["5", "7", "9"]:
 
-                    print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO.")
+                print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO.")
 
         # FUNCIONÁRIO
 
@@ -369,6 +380,10 @@ para criar a senha inicial.
                         motivo,
                         compensacao
                     )
+                    
+                elif subopcao == "2":
+                    id_func = int(input("Digite seu ID: "))
+                    ver_status_justificativa(id_func)
                     
             elif opcao == "5":
                 

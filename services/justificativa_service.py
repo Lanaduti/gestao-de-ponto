@@ -112,3 +112,46 @@ def atualizar_status_justificativa(
 
         finally:
             conn.close()
+
+def ver_status_justificativa(id_funcionario):
+
+    conn = conectar_banco()
+
+    if conn:
+        try:
+            cursor = conn.cursor()
+
+            sql = """
+                SELECT
+                    id,
+                    data_falta,
+                    motivo,
+                    status,
+                    compensacao
+                FROM registro_justificativa
+                WHERE id_funcionario = %s
+                ORDER BY data_falta DESC
+            """
+
+            cursor.execute(sql, (id_funcionario,))
+            justificativas = cursor.fetchall()
+
+            if not justificativas:
+                print("\n⚠️  Nenhuma justificativa encontrada.")
+                return
+
+            print("\n===== MINHAS JUSTIFICATIVAS =====")
+            for j in justificativas:
+                print(f"""
+ID: {j[0]}
+Data da Falta: {j[1]}
+Motivo: {j[2]}
+Status: {j[3]}
+Compensação: {j[4]}
+---------------------------------""")
+
+        except Exception as e:
+            print(f"Erro: {e}")
+
+        finally:
+            conn.close()

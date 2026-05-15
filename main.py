@@ -21,12 +21,13 @@ def tela_login():
 
         opcao = input("Escolha uma opção: ")
 
-        # LOGIN
+        # LOGIN: valida email e senha no banco de dados
         if opcao == "1":
 
             email = input("E-mail: ")
             senha = input("Senha: ")
 
+            #chama o service de usuario para autenticar
             usuario = login(email, senha)
             
             if usuario:
@@ -37,7 +38,8 @@ def tela_login():
             else:
 
                   print("\nEMAIL OU SENHA INCORRETOS!")
-                
+
+        #REDEFINIÇÃO DE SENHA: criar nova senha pelo email        
         elif opcao == "2":
             
             email = input("Digite seu e-mail (0 para sair): ")
@@ -61,29 +63,36 @@ def tela_login():
             print("Opção inválida!")
 
 def iniciar_sistema():
-    
- # Guarda informações do usuário logado 
+    """
+    Função principal do sistema. 
+    Após o login, redireciona o usuário para o menu correto
+    com base no seu tipo: admin ou funcionário.
+    """
+    # Realiza o login e guarda informações do usuário logado 
     usuario_logado = tela_login()
 
-# Verifica o tipo de usuário para liberar menus diferentes
+    # Define o tipo de acesso: admin ou funcionário
     tipo_usuario = usuario_logado["tipo"]
 
     while True:
 
         subopcao = None
 
-        # MOSTRA MENU CONFORME O TIPO
+        # Exibe o menu de acordo com o perfil do usuário
         if tipo_usuario == "admin":
             opcao = menu_admin()
 
         else:
             opcao = menu_funcionario()
   
-        # ADMINISTRADOR
+        # =============================================
+        # ÁREA DO ADMINISTRADOR
+        # =============================================
     
         if tipo_usuario == "admin":
 
-            # FUNCIONÁRIOS
+
+        # Gestão de Funcionários
             if opcao == "1":
 
                 subopcao = submenu_funcionarios()
@@ -117,12 +126,14 @@ def iniciar_sistema():
                             break
                         print("⚠️  E-mail inválido! Digite um e-mail válido (ex: nome@gmail.com)")
 
+                    # Cadastra o funcionário e recebe o ID gerado pelo banco
                     id_funcionario = cadastrar_funcionario(
                         nome,cpf,cargo,setor,
                         novo_salario,vale_transporte, date.today()
                     )
                     
                     if id_funcionario:
+                        # Cria o usuário vinculado ao funcionário cadastrado
                         cadastrar_usuario(email, "", "funcionario", id_funcionario)
                         print("""
 Funcionário cadastrado!
@@ -134,7 +145,8 @@ para criar a senha inicial.
                     
                     else:
                         print("Erro ao cadastrar funcionário!")
-    
+
+                # LISTAR: exibe todos os funcionários cadastrados
                 elif subopcao == "2":
                     
                     listar_funcionarios()
@@ -145,9 +157,10 @@ para criar a senha inicial.
                     
                     id_func = int(input("Digite o ID: "))
                     funcionario = buscar_funcionario(id_func)
-                    
+                  
                     if funcionario:
-
+  
+                        # Mantém o valor atual se nada for digitado
                         novo_nome = input(
                             f"Novo nome ({funcionario[0]}): "
                         ) or funcionario[0]
@@ -187,7 +200,7 @@ para criar a senha inicial.
            
                         print("Funcionário não encontrado.")
 
-                # EXCLUIR
+                # EXCLUIR: remove o funcionário do banco de dados
                 elif subopcao == "4":
                 
                     print("\n--- EXCLUIR FUNCIONÁRIO ---")
@@ -196,7 +209,7 @@ para criar a senha inicial.
                 
                     excluir_funcionario(id_func)
 
-            # PONTO
+           # REGISTRO DE PONTO 
             elif opcao == "2":
 
                 subopcao = submenu_ponto()
@@ -236,7 +249,7 @@ para criar a senha inicial.
 
                    ver_banco_horas(id_func)
 
-            # FOLHA
+            # FOLHA DE PAGAMENTO 
             elif opcao == "4":
 
                 subopcao = submenu_folha()
@@ -249,6 +262,7 @@ para criar a senha inicial.
 
                     gerar_contracheque(id_func)
 
+                # Exporta o contracheque em PDF filtrado por período
                 elif subopcao == "2":
                      
                     print("\n--- EXPORTAR PDF ---")
@@ -268,26 +282,26 @@ para criar a senha inicial.
 
                 subopcao = submenu_justificativas()
 
-                # LISTAR
+                
                 if subopcao == "1":
 
                     listar_justificativas()
 
-                # APROVAR
+                
                 elif subopcao == "2":
 
                     id_just = int(input("Digite o ID da justificativa: "))
 
                     atualizar_status_justificativa(id_just, "Aprovada")
 
-                # REJEITAR
+                
                 elif subopcao == "3":
 
                     id_just = int(input("Digite o ID da justificativa: "))
 
                     atualizar_status_justificativa(id_just, "Rejeitada")
 
-            
+            #  PERFIL DO ADMINISTRADOR 
             elif opcao == "8":
                 print(f"""
             ===========================
@@ -304,15 +318,18 @@ para criar a senha inicial.
                      
                 break
 
+            # Funcionalidades previstas mas ainda não implementadas
             elif opcao in ["5", "7", "9"]:
 
                 print("\nFUNÇÃO AINDA EM DESENVOLVIMENTO.")
 
-        # FUNCIONÁRIO
+        # =============================================
+        # ÁREA DO FUNCIONÁRIO
+        # =============================================
 
         else:
 
-            # PONTO
+            # REGISTRO DE PONTO
             if opcao == "1":
 
                 subopcao = submenu_ponto_funcionario()
@@ -380,11 +397,13 @@ para criar a senha inicial.
                         motivo,
                         compensacao
                     )
-                    
+
+                # CONSULTAR STATUS  DAS JUSTIFICATIVAS ENVIADAS   
                 elif subopcao == "2":
                     id_func = int(input("Digite seu ID: "))
                     ver_status_justificativa(id_func)
-                    
+
+            # MEU PERFIL      
             elif opcao == "5":
                 
                 id_func = usuario_logado["id_funcionario"]

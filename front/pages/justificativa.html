@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Justificativa - High Control Point</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../componets/layout-styles.css">
+    <style>
+        body { font-family: "Times New Roman", Times, serif; background-color: #ffffff; }
+        .pink-accent { color: #A4133C; }
+        .bg-pink-card { background-color: #FFB6C1; }
+        .bg-pink-input { background-color: #FF9AA2; }
+        .font-serif-italic { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .card-shadow { box-shadow: 0 4px 25px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; }
+    </style>
+</head>
+<body>
+    <main class="content p-2 md:p-10 flex justify-center items-start mt-16">
+    <div class="w-full max-w-4xl bg-white rounded-[40px] card-shadow p-6 md:p-12">
+
+        <div class="flex justify-center mb-10">
+            <img src="logo.png" alt="High Control Point" class="h-20 w-auto object-contain">
+        </div>
+
+        <h2 class="pink-accent text-sm font-semibold mb-10 uppercase tracking-wider text-center md:text-left">
+            Envie sua Justificativa:
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="bg-pink-card p-4 rounded-2xl">
+                <p class="text-gray-800 text-xs font-bold mb-2">Funcionário (A):</p>
+                <div id="justificativa-nome-funcionario" class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-sm font-medium">
+                    Carregando...
+                </div>
+            </div>
+            <div class="bg-pink-card p-4 rounded-2xl">
+                <p class="text-gray-800 text-xs font-bold mb-2">Cargo:</p>
+                <div id="justificativa-cargo-funcionario" class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-sm font-medium">
+                    ...
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-pink-card p-3 rounded-2xl mb-4 flex items-center gap-3">
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                    <img src="map_854952.png" alt="Mapa" class="h-7 w-auto object-contain">
+                </div>
+            </div>
+            <div class="bg-pink-input rounded-xl px-3 py-2 flex-grow min-w-0">
+                <p id="justificativa-location" class="text-[10px] md:text-xs text-gray-900 leading-tight italic">
+                    📍 Buscando localização...
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-pink-card p-4 rounded-2xl mb-8 flex justify-between gap-4">
+            <div id="justificativa-data-atual" class="bg-pink-input rounded-lg px-4 py-2 flex-grow text-center font-bold text-gray-800 text-sm">
+                Carregando...
+            </div>
+            <div id="justificativa-hora-atual" class="bg-pink-input rounded-lg px-4 py-2 w-1/3 text-center font-bold text-gray-800 text-sm">
+                --:--
+            </div>
+        </div>
+
+        <form id="justificativa-form" onsubmit="event.preventDefault(); HCP.enviarJustificativa();">
+            <div class="mb-4">
+                <label for="tipo_justificativa" class="block text-gray-800 text-sm font-bold mb-2">Tipo de Justificativa:</label>
+                <select id="tipo_justificativa" class="w-full bg-pink-input border-2 border-gray-700 rounded-xl py-2 px-4 text-gray-800 font-medium focus:outline-none">
+                    <option value="">Selecione...</option>
+                    <option value="Atestado Médico">Atestado Médico</option>
+                    <option value="Atraso">Atraso</option>
+                    <option value="Falta">Falta</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="data_inicio" class="block text-gray-800 text-sm font-bold mb-2">Data de Início:</label>
+                    <input type="date" id="data_inicio" class="w-full bg-pink-input border-2 border-gray-700 rounded-xl py-2 px-4 text-gray-800 font-medium focus:outline-none">
+                </div>
+                <div>
+                    <label for="data_fim" class="block text-gray-800 text-sm font-bold mb-2">Data de Fim (se aplicável):</label>
+                    <input type="date" id="data_fim" class="w-full bg-pink-input border-2 border-gray-700 rounded-xl py-2 px-4 text-gray-800 font-medium focus:outline-none">
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="observacao" class="block text-gray-800 text-sm font-bold mb-2">Observações:</label>
+                <textarea id="observacao" rows="4" class="w-full bg-pink-input border-2 border-gray-700 rounded-xl py-2 px-4 text-gray-800 font-medium focus:outline-none"></textarea>
+            </div>
+
+            <div class="mb-4 flex items-center gap-3">
+                <input type="checkbox" id="compensar_horas" class="w-5 h-5 accent-[#A4133C]" onchange="document.getElementById('campo-horas-compensadas').classList.toggle('hidden', !this.checked)">
+                <label for="compensar_horas" class="text-gray-800 text-sm font-bold">Possui compensação de horas?</label>
+            </div>
+
+            <div id="campo-horas-compensadas" class="mb-6 hidden">
+                <label for="horas_compensadas" class="block text-gray-800 text-sm font-bold mb-2">Quantidade de horas a compensar:</label>
+                <input type="number" id="horas_compensadas" step="0.5" placeholder="Ex: 2.5" class="w-full bg-pink-input border-2 border-gray-700 rounded-xl py-2 px-4 text-gray-800 font-medium focus:outline-none">
+            </div>
+
+            <div class="flex justify-center mb-10">
+                <button type="submit" class="bg-[#A4133C] text-white font-bold py-3 px-12 rounded-full shadow-lg hover:opacity-90 active:scale-95 transition-all">
+                    Enviar Justificativa
+                </button>
+            </div>
+        </form>
+
+        <div id="justificativa-sucesso-msg" class="text-center hidden">
+            <p class="font-serif-italic pink-accent text-lg">Justificativa enviada com sucesso!</p>
+        </div>
+
+    </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => HCP.init());</script>
+</body>
+</html>

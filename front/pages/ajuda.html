@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajuda - High Control Point</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../componets/layout-styles.css">
+    <style>
+        body { font-family: "Times New Roman", Times, serif; background-color: #ffffff; color: #333; }
+        .pink-accent { color: #E91E63; }
+        .bg-pink-card { background-color: #FFB6C1; } 
+        .card-shadow { box-shadow: 0 4px 25px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; }
+        
+        /* Estilo para a transição da aba de instruções */
+        .content-aba {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: #FFF0F2;
+        }
+        .aba-aberta .content-aba {
+            max-height: 200px;
+            padding: 1rem;
+            border-bottom-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+        }
+        .aba-aberta .seta-icon {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body>
+    <main class="content p-2 md:p-10 flex justify-center items-start">
+    <div class="w-full max-w-4xl bg-white rounded-[40px] card-shadow p-6 md:p-12">
+        
+        <div class="flex justify-center mb-10">
+            <img src="logo.png" alt="High Control Point" class="h-20 w-auto object-contain">
+        </div>
+
+        <h2 class="pink-accent text-sm font-bold mb-6 uppercase tracking-widest text-center md:text-left">
+            Ajuda:
+        </h2>
+
+        <div class="space-y-4">
+            
+            <div class="aba-item">
+                <button onclick="toggleAba(this)" class="w-full bg-pink-card hover:bg-pink-300 transition-colors rounded-2xl p-4 flex justify-between items-center text-pink-900 font-bold text-sm text-left">
+                    Como Bater ponto?
+                    <svg class="seta-icon w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div class="content-aba text-xs text-pink-800 leading-relaxed">
+                    Acesse a tela inicial, selecione o tipo de batida (Entrada ou Saída) e confirme. Certifique-se de que sua localização esteja ativa.
+                </div>
+            </div>
+
+            <div class="aba-item">
+                <button onclick="toggleAba(this)" class="w-full bg-pink-card hover:bg-pink-300 transition-colors rounded-2xl p-4 flex justify-between items-center text-pink-900 font-bold text-sm text-left">
+                    Como ver Relatórios?
+                    <svg class="seta-icon w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div class="content-aba text-xs text-pink-800 leading-relaxed">
+                    Clique no ícone de pasta no menu inferior, selecione o mês e o ano desejados para visualizar todos os seus registros detalhados.
+                </div>
+            </div>
+
+            <div class="aba-item">
+                <button onclick="toggleAba(this)" class="w-full bg-pink-card hover:bg-pink-300 transition-colors rounded-2xl p-4 flex justify-between items-center text-pink-900 font-bold text-sm text-left">
+                    Como enviar justificativa?
+                    <svg class="seta-icon w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div class="content-aba text-xs text-pink-800 leading-relaxed">
+                    Vá ao menu de justificativa, descreva o motivo da ausência ou atraso, anexe um comprovante se necessário e clique em enviar.
+                </div>
+            </div>
+
+            <div class="aba-item">
+                <button onclick="toggleAba(this)" class="w-full bg-pink-card hover:bg-pink-300 transition-colors rounded-2xl p-4 flex justify-between items-center text-pink-900 font-bold text-sm text-left">
+                    Como acessar o contracheque?
+                    <svg class="seta-icon w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div class="content-aba text-xs text-pink-800 leading-relaxed">
+                    Selecione a opção Contracheque no menu lateral ou principal para visualizar seus rendimentos, descontos e baixar o PDF.
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>HCP.init();</script>
+    <script>
+        function toggleAba(button) {
+            const item = button.parentElement;
+            item.classList.toggle('aba-aberta');
+            
+            // Opcional: Fecha outras abas ao abrir uma nova
+            document.querySelectorAll('.aba-item').forEach(otherItem => {
+                if (otherItem !== item) {
+                    otherItem.classList.remove('aba-aberta');
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

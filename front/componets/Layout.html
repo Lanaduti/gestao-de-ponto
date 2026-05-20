@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Layout Responsivo</title>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family: "Times New Roman", Times, serif;
+    }
+
+    body{
+      background:#ffff;
+      overflow-x:hidden;
+    }
+
+    /* ===== HEADER ===== */
+    .header{
+      width:100%;
+      height:80px;
+      padding:20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      position:fixed;
+      top:0;
+      left:0;
+      transition: background 0.3s;
+      z-index:1000;
+      background:#ffff;
+    }
+
+    /* MENU ICON */
+    .menu-btn{
+      width:40px;
+      height:40px;
+      border:none;
+      background:none;
+      cursor:pointer;
+      display:flex;
+      transition: 0.4s ease-in-out;
+      flex-direction:column;
+      justify-content:center;
+      gap:5px;
+    }
+
+    .menu-btn span{
+      width:28px;
+      height:4px;
+      border-radius:10px;
+      background:#ff6b8f;
+      transition:0.3s;
+    }
+
+    /* RIGHT ICONS */
+    .top-icons{
+      display:flex;
+      align-items:center;
+      gap:18px;
+    }
+
+    .top-icon{
+      width:42px;
+      height:42px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition:0.3s;
+    }
+
+    .top-icon:hover{
+      background:#f7c2cf;
+    }
+
+    /* ESPAÇO PARA IMAGENS DOS ÍCONES */
+    .top-icon img{
+      width:24px;
+      height:24px;
+      object-fit:contain;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar{
+      position:fixed;
+      top:0;
+      left:-320px;
+      width:320px;
+      height:100vh;
+      background:#FFB3C0;
+      z-index:2000;
+      transition:0.4s;
+      padding:25px;
+      overflow-y:auto;
+    }
+
+    .sidebar.active{
+      left:0;
+    }
+
+    /* PROFILE */
+    .profile{
+      text-align:center;
+      margin-top:30px;
+      margin-bottom:50px;
+    }
+
+    .profile img{
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      object-fit:cover;
+      background:white;
+    }
+
+    .profile h2{
+      color:#c91d4f;
+      margin-top:15px;
+      font-size:38px;
+      font-weight:normal;
+    }
+
+    .profile p{
+      color:#ffff;
+      font-size:24px;
+    }
+
+    /* MENU ITEMS */
+    .menu{
+      display:flex;
+      flex-direction:column;
+      gap:30px;
+    }
+
+    .menu-item{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      text-decoration:none;
+      color:white;
+      font-size:24px;
+      font-weight:600;
+      transition:0.3s;
+    }
+
+    .menu-item:hover{
+      transform:translateX(5px);
+    }
+
+    /* ESPAÇO PARA IMAGENS DOS ÍCONES */
+    .menu-item .icon-box{
+      width:34px;
+      height:34px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .menu-item .icon-box img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+    }
+
+    /* OVERLAY */
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.2);
+      opacity:0;
+      visibility:hidden;
+      transition:0.3s;
+      z-index:1500;
+    }
+
+    .overlay.active{
+      opacity:1;
+      visibility:visible;
+    }
+
+    /* CONTENT */
+    .content{
+      padding-top:100px;
+      text-align:center;
+      min-height: calc(100vh - 100px);
+    }
+
+    .logo{
+      margin-top:40px;
+      margin-bottom:120px;
+    }
+
+    .logo img{
+      width:400px;
+      max-width:80%;
+    }
+
+    .welcome{
+      color:#c91d4f;
+      font-size:86px;
+      padding:0 15px;
+    }
+
+    /* RESPONSIVO */
+    @media(max-width:768px){
+
+      .sidebar{
+        width:260px;
+      }
+
+      .profile h2{
+        font-size:26px;
+      }
+
+      .profile p{
+        font-size:18px;
+      }
+
+      .menu-item{
+        font-size:18px;
+      }
+
+      .welcome{
+        font-size:32px;
+      }
+
+      .top-icons{
+        gap:10px;
+      }
+
+      .top-icon{
+        width:36px;
+        height:36px;
+      }
+    }
+
+    /* Estilos para quando o sidebar estiver aberto */
+    body.sidebar-open .header {
+      z-index: 2100; 
+      background: transparent; /* Torna o header transparente para mostrar a sidebar */
+      pointer-events: none; /* Permite interagir com o que está sob o header */
+    }
+
+    body.sidebar-open .header .menu-btn,
+    body.sidebar-open .header .top-icons {
+      pointer-events: auto; /* Reativa o clique nos botões */
+    }
+
+    body.sidebar-open .menu-btn {
+      transform: translateX(240px); /* Move o ícone para a direita da sidebar (320px) */
+    }
+
+    body.sidebar-open .menu-btn span {
+      background: #ffffff; /* Muda a cor para branco para contrastar com a sidebar rosa */
+    }
+
+    @media(max-width: 768px) {
+      body.sidebar-open .menu-btn {
+        transform: translateX(180px); /* Ajuste para sidebar mobile de 260px */
+      }
+    }
+     footer{
+      width:100%;
+      background:#fff;
+      border-top:1px solid #ececec;
+      padding:25px 20px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .footer-content{
+      width:100%;
+      max-width:1400px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-direction:column;
+      gap:12px;
+      text-align:center;
+    }
+
+    .footer-logo{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#d92d63;
+      font-size:20px;
+      font-weight:700;
+      font-family: "Times New Roman", Times, serif;
+    }
+
+    .footer-links{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:18px;
+      flex-wrap:wrap;
+    }
+
+    .footer-links a{
+      text-decoration:none;
+      color:#777;
+      transition:0.3s;
+    }
+
+    .footer-links a:hover{
+      color:#d92d63;
+    }
+
+    .copyright{
+      color:#999;
+      font-size:14px;
+    }
+
+
+  </style>
+</head>
+<body>
+
+  <!-- OVERLAY -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="profile">
+      <img src="https://tse3.mm.bing.net/th/id/OIP.OuJihTn3EnItyxQotLmFVgHaE7?r=0&rs=1&pid=ImgDetMain&o=7&rm=3" alt="">
+      <h2>Lana Benett</h2>
+      <p>Engenheira</p>
+    </div>
+
+    <nav class="menu">
+
+      <a href="baterPonto.html" class="menu-item">
+        <div class="icon-box">
+          <!-- COLOQUE O ÍCONE AQUI -->
+          <img src="img/file-signature.png" alt="">
+        </div>
+        Registrar ponto
+      </a>
+
+      <a href="relatorio.html" class="menu-item admin-only">
+        <div class="icon-box">
+          <img src="img/file-chart-line.png" alt="">
+        </div>
+        Relatórios
+      </a>
+
+      <a href="funcionarios.html" class="menu-item admin-only">
+        <div class="icon-box">
+          <img src="img/users.png" alt="">
+        </div>
+        Funcionários
+      </a>
+
+      <a href="justificativa.html" class="menu-item">
+        <div class="icon-box">
+          <img src="img/drawer-alt.png" alt="">
+        </div>
+        Justificativa
+      </a>
+
+      <a href="contracheque.html" class="menu-item">
+        <div class="icon-box">
+          <img src="img/cheque.png" alt="">
+        </div>
+        Contracheque
+      </a>
+
+      <a href="ajuda.html" class="menu-item">
+        <div class="icon-box">
+          <img src="img/download.png" alt="">
+        </div>
+        Ajuda
+      </a>
+
+      <a href="#" class="menu-item" onclick="HCP.logout(); return false;">
+        <div class="icon-box">
+          <img src="img/left-from-bracket.png" alt="">
+        </div>
+        Sair
+      </a>
+
+    </nav>
+
+  </aside>
+
+  <!-- HEADER -->
+  <header class="header">
+
+    <!-- MENU -->
+    <button class="menu-btn" id="menuBtn">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <!-- ÍCONES SUPERIORES -->
+    <div class="top-icons">
+
+      <div class="top-icon">
+        <!-- ESPAÇO PARA ÍCONE -->
+        <img src="img/home.png" alt="">
+      </div>
+
+      <div class="top-icon">
+        <img src="img/pasta.png" alt="">
+      </div>
+
+      <a href="perfil.html" class="top-icon">
+        <img src="img/perfil.png" alt="">
+      </a>
+
+    </div>
+
+  </header>
+
+  <!-- CONTEÚDO -->
+  <main class="content">
+
+    
+  </main>
+
+  <script src="../pages/app.js"></script>
+  <script>
+    // Inicializa as permissões do layout
+    document.addEventListener('DOMContentLoaded', () => HCP.initLayout());
+
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    menuBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
+      document.body.classList.toggle('sidebar-open');
+    });
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('active');
+      overlay.classList.remove('active');
+      document.body.classList.remove('sidebar-open');
+    });
+
+  </script>
+   <footer>
+
+      <div class="footer-content">
+
+        <div class="footer-logo">
+          <i class="fa-solid fa-chart-line"></i>
+          HIGH CONTROL POINT
+        </div>
+
+        <div class="footer-links">
+          <a href="#">Início</a>
+          <a href="#">Sistema</a>
+          <a href="#">Contato</a>
+          <a href="#">Suporte</a>
+        </div>
+
+        <div class="copyright">
+          © 2026 High Control Point
+        </div>
+
+      </div>
+
+    </footer>
+
+</body>
+</html>

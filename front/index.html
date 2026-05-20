@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Control Point - Carregando...</title>
+    <style>
+        body { 
+            font-family: "Times New Roman", Times, serif; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #ffffff;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #A4133C;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+    <script src="pages/app.js"></script>
+    <script>
+        function iniciarRoteamento() {
+            try {
+                if (typeof HCP === 'undefined') {
+                    return setTimeout(iniciarRoteamento, 100);
+                }
+
+                const rawData = window.localStorage.getItem('loggedUser');
+                const loggedUser = rawData ? JSON.parse(rawData) : null;
+
+                if (!loggedUser) {
+                    window.location.replace("pages/Login.html");
+                } else {
+                    HCP.redirect(loggedUser.email);
+                }
+            } catch (e) {
+                window.location.replace("pages/Login.html");
+            }
+        }
+
+        // Executa a lógica assim que o script é lido
+        iniciarRoteamento();
+    </script>
+</head>
+<body>
+    <div class="loader"></div>
+    <p style="color: #A4133C; font-weight: bold;">Autenticando acesso...</p>
+    <p style="margin-top: 15px; font-size: 14px; color: #666;">
+        Caso não seja redirecionado, <a href="pages/Login.html" style="color: #A4133C; text-decoration: underline;">clique aqui para fazer login</a>.
+    </p>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Funcionários - High Control Point</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../componets/layout-styles.css">
+  <style>
+    .pink-accent { color: #A4133C; }
+    .bg-pink-light { background-color: #FFC1CC; }
+    .table-row-border { border-bottom: 1px solid #ffffff; }
+    .card-shadow { box-shadow: 0 4px 25px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; }
+  </style>
+</head>
+<body>
+    <main class="content p-2 md:p-10 flex justify-center items-start mt-16">
+        <div class="w-full max-w-6xl bg-white rounded-[40px] card-shadow p-6 md:p-10">
+            <div class="flex justify-center mb-10">
+                <img src="logo.png" alt="High Control Point" class="h-20 w-auto object-contain">
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                <h2 class="pink-accent text-lg font-bold uppercase tracking-widest">Gestão de Funcionários</h2>
+                <button onclick="window.location.href='cadastro.html'" class="bg-[#FF829D] text-white px-6 py-2 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-sm">
+                    + Novo Funcionário
+                </button>
+            </div>
+
+            <div class="overflow-x-auto bg-pink-light rounded-3xl overflow-hidden shadow-sm">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-pink-800 font-bold border-b border-white uppercase text-xs">
+                            <th class="px-6 py-4 border-r border-white tracking-wider">Nome</th>
+                            <th class="px-6 py-4 border-r border-white tracking-wider">CPF</th>
+                            <th class="px-6 py-4 border-r border-white tracking-wider">Cargo</th>
+                            <th class="px-6 py-4 border-r border-white tracking-wider">Setor</th>
+                            <th class="px-6 py-4 border-r border-white tracking-wider">Admissão</th>
+                            <th class="px-6 py-4 text-center tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="funcionarios-table-body" class="text-pink-900 font-medium">
+                        <!-- Os dados serão injetados aqui pelo app.js -->
+                        <tr>
+                            <td colspan="5" class="px-6 py-10 text-center italic">Carregando funcionários...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => HCP.init());
+    </script>
+</body>
+</html>

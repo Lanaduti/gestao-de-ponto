@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro - Administrador</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../componets/layout-styles.css">
+  <style>
+    body { font-family: "Times New Roman", Times, serif; background-color: #ffffff; color: #333; }
+    .pink-accent { color: #A4133C; }
+    .input-gray { background-color: #E5E7EB; } 
+    .bg-pink-button { background-color: #FF829D; }
+    .card-shadow { box-shadow: 0 4px 25px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; }
+  </style>
+</head>
+<body>
+    <main class="content pt-28 pb-10 px-4 md:pt-36 md:pb-20 md:px-10 flex justify-center items-start">
+    <div class="w-full max-w-4xl bg-white rounded-[40px] card-shadow p-6 md:p-12">
+        <div class="flex justify-center mb-10">
+            <img src="logo.png" alt="High Control Point" class="h-20 w-auto object-contain">
+        </div>
+        <h2 class="pink-accent text-sm font-bold mb-6 uppercase tracking-widest text-center md:text-left">Cadastro</h2>
+        <form class="space-y-4" id="cadastroForm">
+            <div>
+                <label class="pink-accent text-xs font-bold ml-2">Nome Completo:</label>
+                <input type="text" id="nome" placeholder="Digite seu nome" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="pink-accent text-xs font-bold ml-2">CPF:</label>
+                    <input type="text" id="cpf" placeholder="000.000.000-00" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                </div>
+                <div>
+                    <label class="pink-accent text-xs font-bold ml-2">E-mail:</label>
+                    <input type="email" id="email" placeholder="exemplo@email.com" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="pink-accent text-xs font-bold ml-2">Cargo:</label>
+                    <input type="text" id="cargo" placeholder="Ex: Desenvolvedor" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                </div>
+                <div>
+                    <label class="pink-accent text-xs font-bold ml-2">Setor:</label>
+                    <input type="text" id="setor" placeholder="Ex: TI" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="pink-accent text-xs font-bold ml-2">Senha:</label>
+                    <input type="password" id="password" placeholder="********" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                </div>
+                <div>
+                    <label class="pink-accent text-xs font-bold ml-2">Confirmar Senha:</label>
+                    <input type="password" id="confirm_password" placeholder="********" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                </div>
+            </div>
+            <div class="flex justify-center pt-6">
+                <button type="submit" class="bg-pink-button text-white font-bold py-3 px-12 rounded-2xl text-lg shadow-md hover:opacity-90 transition-opacity">Cadastrar</button>
+            </div>
+        </form>
+    </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            HCP.init();
+            document.getElementById('cadastroForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                HCP.cadastrar({
+                    nome: document.getElementById('nome').value,
+                    cpf: document.getElementById('cpf').value,
+                    email: document.getElementById('email').value,
+                    cargo: document.getElementById('cargo').value,
+                    setor: document.getElementById('setor').value,
+                    password: document.getElementById('password').value,
+                    confirm_password: document.getElementById('confirm_password').value
+                });
+            });
+        });
+    </script>
+</body>
+</html>

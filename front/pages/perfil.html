@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - High Control Point</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../componets/layout-styles.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #333; }
+        .pink-accent { color: #E91E63; }
+        .bg-pink-card { background-color: #FFB6C1; } 
+        .bg-pink-input { background-color: #FF9AA2; } 
+        .card-shadow { box-shadow: 0 4px 25px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; }
+        
+        /* Ajuste para a foto circular */
+        .profile-img-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <main class="content p-4 md:p-10 flex justify-center items-start">
+    <div class="w-full max-w-4xl bg-white rounded-[40px] card-shadow p-6 md:p-12">
+        
+        <div class="flex justify-center mb-10">
+            <img src="logo.png" alt="High Control Point" class="h-20 w-auto object-contain">
+        </div>
+
+        <h2 class="pink-accent text-sm font-bold mb-6 uppercase tracking-widest text-center md:text-left">
+            Meu Perfil:
+        </h2>
+
+        <div class="flex flex-col items-center mb-8">
+            <div class="relative group">
+                <div id="photo-container" class="profile-img-container mb-4 w-[120px] h-[120px] md:w-[150px] md:h-[150px]" onclick="document.getElementById('upload-foto').click()">
+                    <img id="user-photo-perfil" src="../img/perfil.png" alt="Foto de Perfil" class="w-full h-full object-cover">
+                    <!-- Overlay de upload apenas para funcionário -->
+                    <div id="foto-overlay" class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <input type="file" id="upload-foto" class="hidden" accept="image/*" onchange="HCP.carregarNovaFoto(this)">
+                <button id="btn-remover-foto" onclick="HCP.removerFoto()" class="absolute -bottom-2 -right-2 bg-white p-2 rounded-full shadow-md text-red-500 hover:text-red-700 hidden" title="Remover Foto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            </div>
+            <div class="text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <h2 class="pink-accent text-2xl font-bold">Lana Benett</h2>
+                    <button class="pink-accent">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-gray-700 font-semibold text-sm">Engenheira</p>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-50 rounded-[30px] p-2 space-y-4">
+            
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <div class="md:col-span-3 bg-pink-card p-4 rounded-2xl">
+                    <p class="text-gray-800 text-xs font-bold mb-2">Nome Completo:</p>
+                    <div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-xs font-medium truncate">
+                        Lana Benett da Silva
+                    </div>
+                </div>
+                <div class="md:col-span-2 bg-pink-card p-4 rounded-2xl">
+                    <p class="text-gray-800 text-xs font-bold mb-2">Cargo:</p>
+                    <div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-xs font-medium truncate">
+                        Engenheiro
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="bg-pink-card p-4 rounded-2xl">
+                    <p class="text-gray-800 text-xs font-bold mb-2">CPF:</p>
+                    <div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-xs font-medium">
+                        098.456.876-09
+                    </div>
+                </div>
+                <div class="bg-pink-card p-4 rounded-2xl">
+                    <p class="text-gray-800 text-xs font-bold mb-2">Data de admissão:</p>
+                    <div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-xs font-medium">
+                        09 de abril de 2026
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-end">
+                <div class="bg-pink-card p-4 rounded-2xl w-2/3">
+                    <p class="text-gray-800 text-xs font-bold mb-2">Setor:</p>
+                    <div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-xs font-medium">
+                        Produção
+                    </div>
+                </div>
+                <button class="pink-accent p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => HCP.init());</script>
+</body>
+</html>

@@ -63,7 +63,7 @@ O projeto está sendo desenvolvido com base em conceitos de metodologias ágeis,
 
 * Alana Kelly Reis da Silva
 * Jayane Ellen
-* João Victor
+* João Victor Serrano Costa
 
 Estudantes de Ciência da Computação
 

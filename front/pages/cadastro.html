@@ -48,6 +48,19 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                    <label class="pink-accent text-xs font-bold ml-2">Salário Base:</label>
+                    <input type="number" id="salario_base" step="0.01" placeholder="0.00" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                </div>
+                <div>
+                    <label class="pink-accent text-xs font-bold ml-2">Vale Transporte:</label>
+                    <select id="vale_transporte" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
+                        <option value="S">Sim</option>
+                        <option value="N" selected>Não</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                     <label class="pink-accent text-xs font-bold ml-2">Senha:</label>
                     <input type="password" id="password" placeholder="********" required class="w-full input-gray rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all">
                 </div>
@@ -75,6 +88,8 @@
                     email: document.getElementById('email').value,
                     cargo: document.getElementById('cargo').value,
                     setor: document.getElementById('setor').value,
+                    salario_base: document.getElementById('salario_base').value,
+                    vale_transporte: document.getElementById('vale_transporte').value,
                     password: document.getElementById('password').value,
                     confirm_password: document.getElementById('confirm_password').value
                 });

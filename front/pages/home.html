@@ -9,6 +9,12 @@
     .home-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
     .logo img { width: 450px; max-width: 80%; margin-bottom: 40px; }
     .welcome { color: #c91d4f; font-size: 60px; }
+    .mini-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; width: 100%; max-width: 900px; margin-top: 40px; }
+    .dashboard-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid #c91d4f; }
+    .dashboard-card p { color: #666; font-size: 12px; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
+    .dashboard-card span { color: #333; font-size: 24px; font-weight: bold; }
+    .hidden { display: none !important; }
+    .dashboard-card.admin-link:hover { transform: translateY(-5px); border-color: #c91d4f; transition: all 0.3s ease; }
     @media(max-width:768px) { .welcome { font-size: 32px; } }
   </style>
 </head>
@@ -17,6 +23,36 @@
     <div class="home-container">
       <div class="logo"><img src="logo.png" alt="High Control Point"></div>
       <h1 class="welcome">Bem-vindo(a) ao Sistema</h1>
+
+      <!-- Atalhos para Admin (Apenas para Administradores) -->
+      <div id="admin-shortcuts" class="hidden">
+        <div class="mini-dashboard-grid">
+          <a href="Dashboard.html" class="dashboard-card admin-link" style="text-decoration: none; display: block;">
+            <p>Estatísticas</p>
+            <span>Dashboard</span>
+          </a>
+          <a href="cadastro.html" class="dashboard-card admin-link" style="text-decoration: none; display: block;">
+            <p>Gestão de Equipe</p>
+            <span>Cadastrar Funcionário</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Mini Dashboard (Apenas para Funcionários) -->
+      <div id="employee-mini-dashboard" class="hidden">
+        <div class="mini-dashboard-grid">
+          <div class="dashboard-card"><p>Entrada</p><span id="dashboard-ponto-entrada">--:--</span></div>
+          <div class="dashboard-card"><p>Almoço S.</p><span id="dashboard-ponto-intervalo-s">--:--</span></div>
+          <div class="dashboard-card"><p>Almoço V.</p><span id="dashboard-ponto-intervalo-v">--:--</span></div>
+          <div class="dashboard-card"><p>Saída</p><span id="dashboard-ponto-saida">--:--</span></div>
+          <div class="dashboard-card"><p>Alerta Atraso</p><span id="dashboard-alerta-atraso" class="text-xs">Aguardando</span></div>
+        </div>
+
+        <!-- Mensagem de alerta para funcionários com atrasos acumulados -->
+        <div id="employee-warning-message" class="hidden" style="background-color: #ffe0b2; color: #e65100; padding: 15px; border-radius: 8px; margin-top: 20px; font-weight: bold;">
+            <!-- A mensagem será injetada aqui pelo app.js -->
+        </div>
+      </div>
     </div>
   </main>
 

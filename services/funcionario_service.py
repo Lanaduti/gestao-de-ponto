@@ -109,7 +109,8 @@ def editar_funcionario(
     cpf,
     cargo,
     setor,
-    salario_base
+    salario_base,
+    vale_transporte
 ):
 
     conn = conectar_banco()
@@ -125,7 +126,8 @@ def editar_funcionario(
                     cpf = %s,
                     cargo = %s,
                     setor = %s,
-                    salario_base = %s
+                    salario_base = %s,
+                    vale_transporte = %s
                 WHERE id = %s
             """
 
@@ -135,6 +137,7 @@ def editar_funcionario(
                 cargo,
                 setor,
                 salario_base,
+                vale_transporte,
                 id_funcionario
             )
 
@@ -190,7 +193,8 @@ def buscar_funcionario(id_funcionario):
                     cpf,
                     cargo,
                     setor,
-                    salario_base
+                    salario_base,
+                    vale_transporte
                 FROM funcionario
                 WHERE id = %s
             """

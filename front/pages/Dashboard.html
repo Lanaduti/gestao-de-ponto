@@ -1,59 +1,91 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - High Control Point</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="../componets/layout-styles.css">
-  <style>
-    .dashboard-content { padding: 20px; width: 100%; max-width: 1200px; margin: 0 auto; }
-    /* Estilos específicos da página */
-    .pink-accent { color: #A4133C; }
-    .bg-pink-card { background-color: #FFB6C1; } 
-    .bg-pink-input { background-color: #FF9AA2; } 
-    .bg-pink-button { background-color: #FF829D; }
-    .card-shadow { box-shadow: 0 4px 25px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; }
-    .bar-grow { transition: height 1s ease-in-out; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - High Control Point</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../componets/layout-styles.css">
+    <style>
+        body { font-family: "Times New Roman", Times, serif; background-color: #ffffff; }
+        .pink-accent { color: #A4133C; }
+        .bg-pink-card { background-color: #FFC1CC; }
+        .stat-card { transition: transform 0.3s ease; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .card-shadow { box-shadow: 0 4px 25px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; }
+    </style>
 </head>
 <body>
-    <main class="content">
-        <div class="dashboard-content">
-            <div class="w-full bg-white rounded-[40px] card-shadow p-6 md:p-12">
-                <div class="flex justify-center mb-10"><img src="logo.png" class="h-20"></div>
-                <h2 class="pink-accent text-sm font-bold mb-6 uppercase">Dashboard Administrativo:</h2>
+    <main class="content p-2 md:p-10 flex justify-center items-start mt-24">
+        <div class="w-full max-w-6xl bg-white rounded-[40px] card-shadow p-6 md:p-10">
+            <div class="flex justify-center mb-10">
+                <img src="logo.png" alt="High Control Point" class="h-20 w-auto object-contain">
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold pink-accent uppercase tracking-widest">Dashboard</h1>
+                    <p class="text-gray-500 text-sm">Visão geral do sistema hoje</p>
+                </div>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-            <div class="bg-pink-card p-4 rounded-2xl"><p class="text-gray-800 text-xs font-bold mb-2 uppercase">Funcionários:</p><div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-lg font-bold text-center" id="stat-funcionarios">...</div></div>
-            <div class="bg-pink-card p-4 rounded-2xl"><p class="text-gray-800 text-xs font-bold mb-2 uppercase">Presentes Hoje:</p><div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-lg font-bold text-center" id="stat-presenca">...</div></div>
-            <div class="bg-pink-card p-4 rounded-2xl"><p class="text-gray-800 text-xs font-bold mb-2 uppercase">Justificativas:</p><div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-lg font-bold text-center" id="stat-justificativas">...</div></div>
-            <div class="bg-pink-card p-4 rounded-2xl"><p class="text-gray-800 text-xs font-bold mb-2 uppercase">Horas Extras:</p><div class="bg-pink-input rounded-full px-4 py-1 text-gray-900 text-lg font-bold text-center" id="stat-horas">0h</div></div>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-            <div class="lg:col-span-2 bg-gray-50 rounded-[30px] p-8 border border-gray-100">
-                <h3 class="text-gray-800 font-bold mb-6">Frequência Semanal</h3>
-                <div class="flex items-end justify-between h-48 gap-2">
-                    <div class="flex flex-col items-center flex-1"><div class="bg-pink-input w-full rounded-t-xl bar-grow" style="height: 70%"></div><span class="text-[10px] mt-2 font-bold text-gray-400">SEG</span></div>
-                    <div class="flex flex-col items-center flex-1"><div class="bg-pink-button w-full rounded-t-xl bar-grow" style="height: 85%"></div><span class="text-[10px] mt-2 font-bold text-gray-400">TER</span></div>
-                    <div class="flex flex-col items-center flex-1"><div class="bg-pink-input w-full rounded-t-xl bar-grow" style="height: 95%"></div><span class="text-[10px] mt-2 font-bold text-gray-400">QUA</span></div>
-                    <div class="flex flex-col items-center flex-1"><div class="bg-pink-input w-full rounded-t-xl bar-grow" style="height: 80%"></div><span class="text-[10px] mt-2 font-bold text-gray-400">QUI</span></div>
-                    <div class="flex flex-col items-center flex-1"><div class="bg-pink-input w-full rounded-t-xl bar-grow" style="height: 60%"></div><span class="text-[10px] mt-2 font-bold text-gray-400">SEX</span></div>
+                <div class="bg-pink-100 p-4 rounded-2xl border border-pink-200 flex items-center gap-4 shadow-sm">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold pink-accent uppercase">Alertas de Atraso</span>
+                        <span class="text-[10px] text-pink-800">Ativa notificação para funcionários</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="switch-alertas-atraso" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#A4133C]"></div>
+                    </label>
                 </div>
             </div>
-            <div class="flex flex-col gap-4">
-                <h3 class="text-gray-800 font-bold mb-2">Ações Rápidas</h3>
-                <button onclick="window.location.href='cadastro.html'" class="w-full bg-pink-button hover:opacity-90 text-white transition-all p-4 rounded-2xl flex items-center gap-4 font-bold text-sm shadow-sm"><div class="bg-white/20 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2"/></svg></div>Novo Funcionário</button>
-                <button onclick="HCP.gerarFolha()" class="w-full bg-pink-card hover:bg-pink-300 transition-all p-4 rounded-2xl flex items-center gap-4 text-pink-900 font-bold text-sm"><div class="bg-white p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2"/></svg></div>Gerar Folha Mensal</button>
-                <button onclick="HCP.verAlertas()" class="w-full bg-pink-card hover:bg-pink-300 transition-all p-4 rounded-2xl flex items-center gap-4 text-pink-900 font-bold text-sm"><div class="bg-white p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg></div>Alertas de Atraso</button>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+                <div class="bg-pink-card p-6 rounded-[30px] stat-card shadow-sm">
+                    <p class="text-pink-800 text-xs font-bold uppercase mb-2">Presentes</p>
+                    <h2 id="stat-funcionarios" class="text-4xl font-black pink-accent">0</h2>
+                </div>
+                <div class="bg-pink-card p-6 rounded-[30px] stat-card shadow-sm">
+                    <p class="text-pink-800 text-xs font-bold uppercase mb-2">Presença Hoje</p>
+                    <h2 id="stat-presenca" class="text-4xl font-black pink-accent">0%</h2>
+                </div>
+                <div class="bg-pink-card p-6 rounded-[30px] stat-card shadow-sm">
+                    <p class="text-pink-800 text-xs font-bold uppercase mb-2">Justificativas Pendentes</p>
+                    <h2 id="stat-justificativas" class="text-4xl font-black pink-accent">0</h2>
+                </div>
+                <div class="bg-pink-card p-6 rounded-[30px] stat-card shadow-sm">
+                    <p class="text-pink-800 text-xs font-bold uppercase mb-2">Atrasados do Dia</p>
+                    <h2 id="stat-atrasados-hoje" class="text-4xl font-black pink-accent">0</h2>
+                </div>
+                <div class="bg-pink-card p-6 rounded-[30px] stat-card shadow-sm">
+                    <p class="text-pink-800 text-xs font-bold uppercase mb-2">Alerta de Atrasos</p>
+                    <h2 id="stat-alertas-acumulados" class="text-4xl font-black pink-accent">0</h2>
+                </div>
             </div>
-        </div>
-        <div class="bg-white border border-gray-50 rounded-[30px] p-6 card-shadow">
-            <h3 class="text-gray-800 font-bold mb-6">Atividade Recente</h3>
-            <div class="space-y-4" id="recent-activity-container">
-                <p class="text-gray-400 text-sm italic">Carregando atividades...</p>
-            </div>
-        </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-pink-50 p-8 rounded-[40px] shadow-sm border border-pink-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold pink-accent uppercase tracking-wider">Atividade Recente</h3>
+                        <a href="relatorio-admin.html" class="text-xs font-bold pink-accent hover:underline">Ver tudo</a>
+                    </div>
+                    <div id="recent-activity-container" class="space-y-6">
+                        <p class="text-center text-gray-400 py-10">Carregando atividades...</p>
+                    </div>
+                </div>
+
+                <div class="bg-pink-50 p-8 rounded-[40px] shadow-sm border border-pink-100 flex flex-col justify-center items-center text-center">
+                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 pink-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold pink-accent uppercase tracking-wider mb-2">Folha de Pagamento</h3>
+                    <p class="text-gray-500 text-sm mb-6">Processe os salários e gere os contracheques de todos os colaboradores para o mês vigente.</p>
+                    <button onclick="HCP.gerarFolha()" class="bg-[#A4133C] hover:opacity-90 text-white font-bold py-3 px-8 rounded-full transition-all shadow-md active:scale-95">
+                        Gerar Folha Mensal
+                    </button>
+                </div>
             </div>
         </div>
     </main>

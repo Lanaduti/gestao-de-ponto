@@ -187,13 +187,18 @@ para criar a senha inicial.
                             else funcionario[4]
                         )
 
+                        vt_input = input(
+                            f"Utiliza vale transporte (S/N) ({funcionario[5]}): "
+                        ).strip().upper() or funcionario[5]
+
                         editar_funcionario(
                             id_func,
                             novo_nome,
                             novo_cpf,
                             novo_cargo,
                             novo_setor,
-                            novo_salario
+                            novo_salario,
+                            vt_input
                         )
 
                     else:

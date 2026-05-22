@@ -1,4 +1,5 @@
 from flask import Flask, send_from_directory, jsonify, request, redirect, send_file
+import sys
 from config.conexao import conectar_banco
 import psycopg2
 import psycopg2.extras
@@ -9,13 +10,15 @@ import os
 from datetime import datetime
 import pytz
 
-# Configuração do Flask para servir os arquivos do frontend que estão na pasta vizinha 'gestao'
+# Configuração do Flask para servir os arquivos do frontend
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIR = os.path.join(BASE_DIR, 'front')
+# Adiciona o diretório pai ao path para permitir a importação de 'config'
+sys.path.append(os.path.dirname(BASE_DIR))
+FRONTEND_DIR = BASE_DIR
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 
 def calcular_inss(salario):
-    """Cálculo progressivo do INSS baseado na lógica do folha_service."""
+    """Cálculo progressivo do INSS."""
     if salario <= 1518.00:
         return salario * 0.075
     elif salario <= 2793.88:
@@ -137,24 +140,18 @@ def gerar_folha_mensal():
         pdf_list = []
 
         # 1. Busca funcionários (incluindo nome para o PDF)
-        cursor.execute("SELECT id, nome, cpf, cargo, setor, salario_base, vale_transporte FROM funcionario")
+        cursor.execute("SELECT id, nome, cpf, cargo, setor, salario_base FROM funcionario")
         funcionarios = cursor.fetchall()
 
         processados = 0
         for f in funcionarios:
-            salario_bruto = float(f['salario_base'] or 0)
-            
-            # Cálculos Automáticos
-            desc_inss = calcular_inss(salario_bruto)
-            desc_vt = salario_bruto * 0.06 if f['vale_transporte'] == 'S' else 0
-            
-            # Busca soma de descontos manuais
+            # Busca soma de descontos para o funcionário
             cursor.execute("SELECT SUM(valor) as total FROM desconto WHERE id_funcionario = %s", (f['id'],))
             desc = cursor.fetchone()
-            total_manuais = float(desc['total'] or 0)
+            total_descontos = desc['total'] if desc['total'] else 0
             
-            total_descontos = desc_inss + desc_vt + total_manuais
-            salario_liquido = max(0, salario_bruto - total_descontos)
+            salario_bruto = float(f['salario_base'] or 0)
+            salario_liquido = max(0, salario_bruto - float(total_descontos))
 
             # 2. Insere ou atualiza a folha do mês
             query_folha = """
@@ -238,8 +235,8 @@ def buscar_contracheque(id_funcionario):
     if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        # Salário Bruto e VT do cadastro original
-        cursor.execute("SELECT salario_base, vale_transporte FROM funcionario WHERE id = %s", (id_funcionario,))
+        # Salário Bruto do cadastro original
+        cursor.execute("SELECT salario_base FROM funcionario WHERE id = %s", (id_funcionario,))
         func = cursor.fetchone()
         if not func: return jsonify({"mensagem": "Funcionário não encontrado"}), 404
         
@@ -254,37 +251,21 @@ def buscar_contracheque(id_funcionario):
         folha = cursor.fetchone()
 
         if not folha:
-            # Se a folha ainda não foi gerada, calculamos em tempo real
-            desc_inss = calcular_inss(bruto_base)
-            desc_vt = bruto_base * 0.06 if func['vale_transporte'] == 'S' else 0
-            
+            # Se a folha ainda não foi gerada pelo admin, calculamos em tempo real para a pré-visualização
             cursor.execute("SELECT SUM(valor) as total FROM desconto WHERE id_funcionario = %s", (id_funcionario,))
             res_desc = cursor.fetchone()
-            total_manuais = float(res_desc['total'] or 0)
-            
-            total_descontos = desc_inss + desc_vt + total_manuais
+            total_descontos = float(res_desc['total'] or 0)
             folha = {
                 "salario_bruto": bruto_base,
                 "descontos": total_descontos,
                 "salario_liquido": max(0, bruto_base - total_descontos)
             }
         
-        # Monta a lista detalhada de itens para o Frontend
-        itens_detalhados = []
-        
-        # Adiciona descontos automáticos
-        desc_inss_calc = calcular_inss(bruto_base)
-        itens_detalhados.append({"descricao": "INSS (Previdência)", "valor": desc_inss_calc})
-        
-        if func['vale_transporte'] == 'S':
-            itens_detalhados.append({"descricao": "Vale Transporte (6%)", "valor": bruto_base * 0.06})
-
-        # Busca descontos manuais/adicionais
+        # Busca a lista detalhada de descontos para exibição no espaço abaixo
         cursor.execute("SELECT tipo as descricao, valor FROM desconto WHERE id_funcionario = %s", (id_funcionario,))
-        manuais = cursor.fetchall()
-        itens_detalhados.extend([{"descricao": m['descricao'], "valor": float(m['valor'] or 0)} for m in manuais])
-
-        folha['itens_detalhados'] = itens_detalhados
+        itens = cursor.fetchall()
+        # Converte valores decimais para float para compatibilidade com JSON
+        folha['itens_detalhados'] = [{"descricao": i['descricao'], "valor": float(i['valor'] or 0)} for i in itens]
 
         return jsonify(folha), 200
     except Exception as e:
@@ -412,50 +393,6 @@ def buscar_alertas():
         cursor.close()
         conn.close()
 
-@app.route('/api/admin/justificativas', methods=['GET'])
-def listar_justificativas_admin():
-    """Retorna todas as justificativas enviadas para o admin gerenciar."""
-    conn = conectar_banco()
-    if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
-    try:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        query = """
-            SELECT rj.id, f.nome, to_char(rj.data_falta, 'DD/MM/YYYY') as data,
-                   rj.motivo, rj.status, rj.compensacao, COALESCE(j.quantidade_horas, 0) as horas
-            FROM registro_justificativa rj
-            JOIN funcionario f ON rj.id_funcionario = f.id
-            LEFT JOIN justificativa j ON rj.id_funcionario = j.id_funcionario AND rj.data_falta = j.data_justificativa
-            ORDER BY rj.status DESC, rj.data_falta DESC
-        """
-        cursor.execute(query)
-        justificativas = cursor.fetchall()
-        # Converte Decimal para float para serialização JSON
-        for j in justificativas:
-            j['horas'] = float(j['horas'])
-        return jsonify(justificativas), 200
-    finally:
-        cursor.close()
-        conn.close()
-
-@app.route('/api/admin/justificativas/status', methods=['POST'])
-def atualizar_status_justificativa():
-    """Aprova ou rejeita uma justificativa."""
-    data = request.json
-    id_just = data.get('id')
-    novo_status = data.get('status')
-    conn = conectar_banco()
-    if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
-    try:
-        cursor = conn.cursor()
-        cursor.execute("UPDATE registro_justificativa SET status = %s WHERE id = %s", (novo_status, id_just))
-        conn.commit()
-        return jsonify({"mensagem": f"Justificativa {novo_status} com sucesso!"}), 200
-    except Exception as e:
-        return jsonify({"mensagem": str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
-
 @app.route('/api/perfil/atualizar', methods=['POST'])
 def atualizar_perfil():
     """Atualiza os dados do funcionário no banco de dados."""
@@ -547,6 +484,50 @@ def cadastrar_funcionario():
         if cursor: cursor.close()
         if conn: conn.close()
 
+@app.route('/api/admin/justificativas', methods=['GET'])
+def listar_justificativas_admin():
+    """Retorna todas as justificativas enviadas para o admin gerenciar."""
+    conn = conectar_banco()
+    if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
+    try:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        query = """
+            SELECT rj.id, f.nome, to_char(rj.data_falta, 'DD/MM/YYYY') as data,
+                   rj.motivo, rj.status, rj.compensacao, COALESCE(j.quantidade_horas, 0) as horas
+            FROM registro_justificativa rj
+            JOIN funcionario f ON rj.id_funcionario = f.id
+            LEFT JOIN justificativa j ON rj.id_funcionario = j.id_funcionario AND rj.data_falta = j.data_justificativa
+            ORDER BY rj.status DESC, rj.data_falta DESC
+        """
+        cursor.execute(query)
+        justificativas = cursor.fetchall()
+        # Converte Decimal para float para serialização JSON
+        for j in justificativas:
+            j['horas'] = float(j['horas'])
+        return jsonify(justificativas), 200
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/admin/justificativas/status', methods=['POST'])
+def atualizar_status_justificativa():
+    """Aprova ou rejeita uma justificativa."""
+    data = request.json
+    id_just = data.get('id')
+    novo_status = data.get('status')
+    conn = conectar_banco()
+    if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE registro_justificativa SET status = %s WHERE id = %s", (novo_status, id_just))
+        conn.commit()
+        return jsonify({"mensagem": f"Justificativa {novo_status} com sucesso!"}), 200
+    except Exception as e:
+        return jsonify({"mensagem": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.route('/api/admin/funcionarios', methods=['GET'])
 def listar_funcionarios():
     """Retorna a lista completa de funcionários cadastrados."""
@@ -591,7 +572,7 @@ def excluir_funcionario(id):
 
 @app.route('/api/admin/relatorios', methods=['GET'])
 def listar_relatorios_gerais():
-    """Retorna o histórico de ponto de todos os funcionários para o admin com filtros."""
+    """Retorna o histórico de ponto de todos os funcionários para o admin com filtros de dia, mês e ano."""
     dia = request.args.get('dia')
     mes = request.args.get('mes')
     ano = request.args.get('ano')
@@ -630,7 +611,7 @@ def listar_relatorios_gerais():
 
 @app.route('/api/admin/relatorios/pdf', methods=['GET'])
 def relatorio_geral_pdf():
-    """Gera um PDF com o histórico de ponto de todos os funcionários com filtros."""
+    """Gera um PDF consolidado com o histórico de ponto de todos os funcionários aplicando os filtros."""
     dia = request.args.get('dia')
     mes = request.args.get('mes')
     ano = request.args.get('ano')
@@ -666,7 +647,7 @@ def relatorio_geral_pdf():
 
         pdf = FPDF()
         pdf.add_page()
-        
+
         # Título dinâmico para o PDF
         pdf_title = "Relatório Consolidado de Pontos"
         if dia and mes and ano:
@@ -864,18 +845,15 @@ def status_ponto(id_funcionario):
     if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        fuso_brasil = pytz.timezone("America/Sao_Paulo")
-        hoje = datetime.now(fuso_brasil).date()
-        
         query = """
             SELECT to_char(entrada, 'HH24:MI') as entrada, 
                    to_char(saida_intervalo, 'HH24:MI') as saida_intervalo, 
                    to_char(volta_intervalo, 'HH24:MI') as volta_intervalo, 
                    to_char(saida, 'HH24:MI') as saida 
             FROM registro_ponto 
-            WHERE id_funcionario = %s AND data_registro = %s
+            WHERE id_funcionario = %s AND data_registro = CURRENT_DATE
         """
-        cursor.execute(query, (id_funcionario, hoje))
+        cursor.execute(query, (id_funcionario,))
         status = cursor.fetchone()
         return jsonify(status if status else {}), 200
     except Exception as e:
@@ -905,24 +883,22 @@ def registrar_ponto_api():
     if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        fuso_brasil = pytz.timezone("America/Sao_Paulo")
-        agora_dt = datetime.now(fuso_brasil)
-        hoje = agora_dt.date()
-        agora_time = agora_dt.strftime('%H:%M:%S')
-
         # Verifica se já existe um registro de ponto para este funcionário hoje
-        cursor.execute("SELECT id FROM registro_ponto WHERE id_funcionario = %s AND data_registro = %s", (id_func, hoje))
+        cursor.execute("SELECT id FROM registro_ponto WHERE id_funcionario = %s AND data_registro = CURRENT_DATE", (id_func,))
         registro = cursor.fetchone()
         
+        fuso_brasil = pytz.timezone("America/Sao_Paulo")
+        agora = datetime.now(fuso_brasil).strftime('%H:%M:%S')
+
         if registro:
             # Se já existe registro hoje, apenas atualiza a coluna específica (ex: almoço ou saída)
-            cursor.execute(f"UPDATE registro_ponto SET {coluna} = %s WHERE id = %s", (agora_time, registro['id']))
+            cursor.execute(f"UPDATE registro_ponto SET {coluna} = %s WHERE id = %s", (agora, registro['id']))
         else:
             # Se é a primeira batida do dia (entrada), cria uma nova linha
-            cursor.execute(f"INSERT INTO registro_ponto (id_funcionario, data_registro, {coluna}) VALUES (%s, %s, %s)", (id_func, hoje, agora_time))
+            cursor.execute(f"INSERT INTO registro_ponto (id_funcionario, data_registro, {coluna}) VALUES (%s, CURRENT_DATE, %s)", (id_func, agora))
         
         conn.commit()
-        return jsonify({"mensagem": f"{tipo} registrado com sucesso!", "horario": agora_time}), 200
+        return jsonify({"mensagem": f"{tipo} registrado com sucesso!", "horario": agora}), 200
     except Exception as e:
         return jsonify({"mensagem": str(e)}), 500
     finally:
@@ -971,7 +947,7 @@ def dashboard_stats():
         cursor.execute("SELECT valor FROM configuracao WHERE chave = 'alertas_atraso_ativo'")
         res_config = cursor.fetchone()
         alertas_ativos = res_config['valor'] == 'true' if res_config else False
-        
+
         # 6. Funcionários com Atrasos Acumulados
         employees_with_accumulated_delays = get_employees_with_accumulated_delays(conn)
 

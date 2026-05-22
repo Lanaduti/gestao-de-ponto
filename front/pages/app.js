@@ -15,7 +15,9 @@ const HCP_App = {
         relatorioPage: 'relatorio.html',
         homePage: 'home.html',
         justificativaPage: 'justificativa.html',
-        contrachequePage: 'contracheque.html'
+        contrachequePage: 'contracheque.html',
+        justificativasAdminPage: 'justificativas-admin.html',
+        resetPasswordPage: 'reset_password.html' // New page for password reset
     },
 
     /**
@@ -86,7 +88,7 @@ const HCP_App = {
      * Lógica de redirecionamento: Lana vai para Dashboard, outros para Home
      */
     redirect(email) {
-        const isAdmin = email.toLowerCase() === this.config.adminEmail;
+        const isAdmin = email.toLowerCase() === this.config.adminEmail.toLowerCase();
         let destination = isAdmin 
             ? this.config.dashboardPage 
             : this.config.homePage;
@@ -101,7 +103,10 @@ const HCP_App = {
      * Verifica se o usuário está logado. Se não, manda para o login.
      */
     checkAuth() {
-        if (window.location.pathname.includes(this.config.loginPage)) return null;
+        const path = window.location.pathname;
+        if (path.includes(this.config.loginPage) || path.includes(this.config.resetPasswordPage)) {
+            return null;
+        }
         
         const user = JSON.parse(localStorage.getItem('loggedUser'));
         if (!user) {
@@ -138,7 +143,7 @@ const HCP_App = {
             document.head.appendChild(fa);
         }
 
-        const isAdmin = user.email === this.config.adminEmail;
+        const isAdmin = user.tipo === 'admin';
         const body = document.body;
 
         // 1. Injetar Sidebar e Header (Baseado no Layout.html e LayoutAdmin.html)
@@ -147,16 +152,20 @@ const HCP_App = {
             <aside class="sidebar" id="sidebar">
                 <button class="menu-btn-close" id="menuBtnClose"><span></span><span></span><span></span></button>
                 <div class="profile">
-                    <img src="../img/perfil.png" alt="">
+                    <a href="perfil.html">
+                        <img src="../img/perfil.png" alt="Perfil">
+                    </a>
                     <h2>${user.nome || (isAdmin ? 'Administrador' : user.email.split('@')[0])}</h2>
                     <p>${isAdmin ? 'Administradora' : (user.cargo || 'Funcionário')}</p>
                 </div>
                 <nav class="menu">
+                    <a href="home.html" class="menu-item"><div class="icon-box"><img src="../img/home.png"></div>Home</a>
                     ${isAdmin ? `<a href="Dashboard.html" class="menu-item"><div class="icon-box"><img src="../img/home.png"></div>Dashboard</a>` : ''}
                     ${!isAdmin ? `<a href="baterPonto.html" class="menu-item"><div class="icon-box"><img src="../img/file-signature.png" alt=""></div>Registrar ponto</a>` : ''}
                     <a href="${isAdmin ? this.config.relatorioAdminPage : this.config.relatorioPage}" class="menu-item"><div class="icon-box"><img src="../img/file-chart-line.png" alt=""></div>${isAdmin ? 'Relatórios Gerais' : 'Relatórios'}</a>
                     ${isAdmin ? `<a href="funcionarios.html" class="menu-item"><div class="icon-box"><img src="../img/perfil.png" alt=""></div>Funcionários</a>` : ''}
                     ${isAdmin ? `<a href="cadastro.html" class="menu-item"><div class="icon-box"><img src="../img/file-signature.png" alt=""></div>Novo Cadastro</a>` : ''}
+                    ${isAdmin ? `<a href="justificativas-admin.html" class="menu-item"><div class="icon-box"><img src="../img/drawer-alt.png" alt=""></div>Gerenciar Justificativas</a>` : ''}
                     ${!isAdmin ? `<a href="justificativa.html" class="menu-item"><div class="icon-box"><img src="../img/drawer-alt.png" alt=""></div>Justificativa</a>` : ''}
                     ${!isAdmin ? `<a href="contracheque.html" class="menu-item"><div class="icon-box"><img src="../img/cheque.png" alt=""></div>Contracheque</a>` : ''}
                     ${!isAdmin ? `<a href="ajuda.html" class="menu-item"><div class="icon-box"><img src="../img/download.png" alt=""></div>Ajuda</a>` : ''}
@@ -166,7 +175,7 @@ const HCP_App = {
             <header class="header">
                 <button class="menu-btn" id="menuBtn"><span></span><span></span><span></span></button>
                 <div class="top-icons">
-                    <a href="${isAdmin ? this.config.dashboardPage : this.config.homePage}" class="top-icon"><img src="../img/home.png" alt=""></a>
+                    <a href="${this.config.homePage}" class="top-icon"><img src="../img/home.png" alt=""></a>
                     <a href="${isAdmin ? this.config.relatorioAdminPage : this.config.relatorioPage}" class="top-icon"><img src="../img/pasta.png" alt=""></a>
                     <a href="perfil.html" class="top-icon"><img src="../img/perfil.png" alt=""></a>
                 </div>
@@ -236,15 +245,28 @@ const HCP_App = {
         this.verificarConexaoBanco();
 
         if (window.location.pathname.includes(this.config.dashboardPage)) {
+            // Adiciona um espaçamento extra entre o cabeçalho fixo e o conteúdo do Dashboard
+            const mainContainer = document.querySelector('main.content');
+            if (mainContainer) {
+                mainContainer.classList.replace('mt-16', 'mt-24') || mainContainer.classList.add('mt-24');
+            }
             this.carregarDashboard();
-            this.iniciarInterfacePonto();
+            // Configura o evento do interruptor de alertas se ele existir na página
+            setTimeout(() => {
+                const toggle = document.getElementById('switch-alertas-atraso');
+                if (toggle) toggle.addEventListener('change', (e) => this.toggleAlertasAtraso(e.target.checked));
+            }, 500);
         }
         if (window.location.pathname.includes(this.config.funcionariosPage)) {
             this.carregarFuncionarios();
         }
+        if (window.location.pathname.includes(this.config.justificativasAdminPage)) {
+            this.carregarJustificativasAdmin();
+        }
+        if (window.location.pathname.includes(this.config.homePage)) {
+            this.carregarHomeFuncionario();
+        }
         if (window.location.pathname.includes(this.config.baterPontoPage)) {
-            // No longer needed to dynamically set month/year for relatorioPage here
-            // as it's handled when relatorioPage itself is initialized.
             this.carregarStatusPonto();
             this.startClock();
 
@@ -271,6 +293,8 @@ const HCP_App = {
             ['relatorio-mes', 'relatorio-ano'].forEach(id => {
                 document.getElementById(id)?.addEventListener('change', () => this.carregarContracheque());
             });
+        } else if (path.includes(this.config.resetPasswordPage)) {
+            this.initResetPasswordPage();
         }
     },
 
@@ -298,7 +322,7 @@ const HCP_App = {
      */
     updateLayoutInfo(user) {
         if (!user) return;
-        const isAdmin = user.email === this.config.adminEmail;
+        const isAdmin = user.tipo === 'admin';
         const nomeExibicao = user.nome || (isAdmin ? 'Administrador' : user.email.split('@')[0]);
         
         const nameElement = document.querySelector('.profile h2');
@@ -339,6 +363,11 @@ const HCP_App = {
         if (profileMainName) profileMainName.textContent = nomeExibicao;
         if (profileMainRole) profileMainRole.textContent = isAdmin ? 'Administradora' : (user.cargo || 'Funcionário');
         
+        // Esconde apenas o botão de edição completa no rodapé para o Admin, mantendo o lápis do nome
+        if (isAdmin) {
+            document.querySelector('button[onclick="HCP.editarPerfilCompleto()"]')?.classList.add('hidden');
+        }
+
         // Atualiza nome na página de Registro de Ponto
         const pontoName = document.getElementById('ponto-nome-funcionario');
         if (pontoName) pontoName.textContent = nomeExibicao;
@@ -370,11 +399,24 @@ const HCP_App = {
             const valueDiv = card.querySelector('.bg-pink-input');
             if (!label || !valueDiv) return;
 
+            // Se for Admin, exibe os campos de funcionário mas sem dados ("---") conforme solicitado
+            const employeeOnly = ['cpf', 'admissão', 'salário', 'transporte', 'setor'];
+            if (isAdmin && employeeOnly.some(key => label.includes(key))) {
+                valueDiv.textContent = '---';
+                return;
+            }
+
             if (label.includes('nome')) valueDiv.textContent = user.nome;
             if (label.includes('cargo')) valueDiv.textContent = isAdmin ? 'Administradora' : user.cargo;
             if (label.includes('cpf')) valueDiv.textContent = user.cpf;
             if (label.includes('admissão')) valueDiv.textContent = user.data_admissao;
             if (label.includes('setor')) valueDiv.textContent = user.setor;
+            if (label.includes('salário')) {
+                valueDiv.textContent = user.salario_base ? `R$ ${user.salario_base.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00';
+            }
+            if (label.includes('transporte')) {
+                valueDiv.textContent = user.vale_transporte === 'S' ? 'Sim' : 'Não';
+            }
         });
     },
 
@@ -551,18 +593,12 @@ const HCP_App = {
         if (!user) return;
 
         const novoNome = prompt("Editar Nome Completo:", user.nome || "");
-        const novoCargo = prompt("Editar Cargo:", user.cargo || "");
-        const novoCpf = prompt("Editar CPF:", user.cpf || "");
-        const novoSetor = prompt("Editar Setor:", user.setor || "");
 
-        // Só prossegue se o usuário não cancelar os prompts principais
-        if (novoNome !== null && novoCargo !== null) {
+        // Só prossegue se o nome for preenchido e for diferente do atual
+        if (novoNome !== null && novoNome.trim() !== "" && novoNome !== user.nome) {
             const dadosAtualizados = { 
                 ...user, 
-                nome: novoNome, 
-                cargo: novoCargo, 
-                cpf: novoCpf, 
-                setor: novoSetor 
+                nome: novoNome.trim()
             };
             
             try {
@@ -574,7 +610,7 @@ const HCP_App = {
 
                 if (response.ok) {
                     localStorage.setItem('loggedUser', JSON.stringify(dadosAtualizados));
-                    alert('Perfil atualizado com sucesso!');
+                    alert('Nome atualizado com sucesso!');
                     location.reload();
                 } else {
                     alert('Erro ao salvar alterações no banco de dados.');
@@ -598,7 +634,13 @@ const HCP_App = {
             // Atualiza os contadores
             if (document.getElementById('stat-funcionarios')) document.getElementById('stat-funcionarios').textContent = data.total_funcionarios;
             if (document.getElementById('stat-presenca')) document.getElementById('stat-presenca').textContent = data.percent_presente;
+            if (document.getElementById('stat-atrasados-hoje')) document.getElementById('stat-atrasados-hoje').textContent = data.total_atrasados_hoje;
+            if (document.getElementById('stat-alertas-acumulados')) document.getElementById('stat-alertas-acumulados').textContent = data.total_alertas_acumulados;
             if (document.getElementById('stat-justificativas')) document.getElementById('stat-justificativas').textContent = data.justificativas_pendentes;
+
+            // Atualiza o estado visual do toggle se existir na Dashboard
+            const toggle = document.getElementById('switch-alertas-atraso');
+            if (toggle) toggle.checked = data.alertas_ativos;
 
             // Atualiza Atividade Recente
             const container = document.getElementById('recent-activity-container');
@@ -621,10 +663,116 @@ const HCP_App = {
                     `;
                 }).join('');
             }
+
+            // Atualiza a seção de funcionários com atrasos acumulados
+            const accumulatedDelaysContainer = document.getElementById('accumulated-delays-list');
+            if (accumulatedDelaysContainer && data.employees_with_accumulated_delays) {
+                if (data.employees_with_accumulated_delays.length > 0) {
+                    accumulatedDelaysContainer.innerHTML = `
+                        <h3 class="text-lg font-bold text-pink-700 mb-4">Funcionários com Atrasos Acumulados (>= 2 dias)</h3>
+                        <ul class="list-disc list-inside text-gray-700">
+                            ${data.employees_with_accumulated_delays.map(emp => `
+                                <li>${emp.nome} (${emp.dias_atraso} dias de atraso)</li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } else {
+                    accumulatedDelaysContainer.innerHTML = `<p class="text-gray-500">Nenhum funcionário com atrasos acumulados de 2 ou mais dias.</p>`;
+                }
+            }
         } catch (error) {
             console.error('Erro ao carregar Dashboard:', error);
-            if (tableBody) tableBody.innerHTML = `<tr><td colspan="2" class="p-10 text-center text-red-500">Erro ao carregar registros. Por favor, tente novamente mais tarde.</td></tr>`;
+            const container = document.getElementById('recent-activity-container');
+            if (container) container.innerHTML = `<p class="p-4 text-center text-red-500">Erro ao carregar atividades.</p>`;
         }
+    },
+
+    /**
+     * Ativa ou desativa os alertas de atraso via API
+     */
+    async toggleAlertasAtraso(ativo) {
+        try {
+            const response = await fetch('/api/admin/config/alertas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ativo })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.mensagem || 'Erro ao atualizar configuração.');
+            }
+        } catch (error) {
+            console.error('Erro ao alternar alertas:', error);
+        }
+    },
+
+    /**
+     * Carrega todas as justificativas para o Admin
+     */
+    async carregarJustificativasAdmin() {
+        try {
+            const response = await fetch('/api/admin/justificativas');
+            const data = await response.json();
+            const tableBody = document.getElementById('justificativas-admin-table-body');
+            if (!tableBody) return;
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-10 text-center italic">Nenhuma justificativa encontrada.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = data.map(j => {
+                const statusClass = j.status === 'Pendente' ? 'bg-yellow-100 text-yellow-700' : 
+                                   j.status === 'Aprovada' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                
+                return `
+                    <tr class="table-row-border hover:bg-white/20 transition-colors">
+                        <td class="px-6 py-4 text-sm border-r border-white font-bold">${j.nome}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white">${j.data}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white italic">${j.motivo}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white text-center">${j.compensacao}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white text-center">${j.horas}h</td>
+                        <td class="px-6 py-4 border-r border-white text-center">
+                            <span class="${statusClass} text-[10px] font-bold px-2 py-1 rounded-full uppercase">${j.status}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center flex justify-center gap-3">
+                            ${j.status === 'Pendente' ? `
+                                <button onclick="HCP.atualizarStatusJustificativa(${j.id}, 'Aprovada')" class="text-green-600 hover:scale-125 transition-transform" title="Aprovar">
+                                    <i class="fas fa-check-circle text-lg"></i>
+                                </button>
+                                <button onclick="HCP.atualizarStatusJustificativa(${j.id}, 'Rejeitada')" class="text-red-600 hover:scale-125 transition-transform" title="Rejeitar">
+                                    <i class="fas fa-times-circle text-lg"></i>
+                                </button>
+                            ` : '<span class="text-gray-400 text-xs">Concluído</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Erro ao carregar justificativas:', error);
+        }
+    },
+
+    /**
+     * Aprova ou Rejeita uma justificativa via API
+     */
+    async atualizarStatusJustificativa(id, status) {
+        if (!confirm(`Deseja definir esta justificativa como ${status}?`)) return;
+        try {
+            const response = await fetch('/api/admin/justificativas/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status })
+            });
+            const res = await response.json();
+            if (response.ok) {
+                alert(res.mensagem);
+                this.carregarJustificativasAdmin();
+                this.carregarDashboard(); // Atualiza contador no dashboard se ele estiver aberto
+            } else {
+                alert(res.mensagem);
+            }
+        } catch (error) { alert('Erro ao processar solicitação.'); }
     },
 
     /**
@@ -638,6 +786,8 @@ const HCP_App = {
         const novoCpf = prompt("Editar CPF:", func.cpf);
         const novoCargo = prompt("Editar Cargo:", func.cargo);
         const novoSetor = prompt("Editar Setor:", func.setor);
+        const novoSalario = prompt("Editar Salário:", func.salario_base);
+        const novoVT = prompt("Editar Vale Transporte (S/N):", func.vale_transporte);
 
         if (novoNome !== null && novoCargo !== null) {
             const dadosAtualizados = { 
@@ -645,7 +795,9 @@ const HCP_App = {
                 nome: novoNome, 
                 cargo: novoCargo, 
                 cpf: novoCpf, 
-                setor: novoSetor
+                setor: novoSetor,
+                salario_base: novoSalario,
+                vale_transporte: novoVT?.toUpperCase()
             };
             
             try {
@@ -738,6 +890,8 @@ const HCP_App = {
                         <td class="px-6 py-4 text-sm border-r border-white">${f.cpf}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${f.cargo}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${f.setor}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white">R$ ${f.salario_base?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white">${f.vale_transporte === 'S' ? 'Sim' : 'Não'}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${f.data_admissao}</td>
                         <td class="px-6 py-4 text-center flex justify-center gap-3">
                             <button onclick="window.HCP.editarFuncionario(${f.id})" class="pink-accent hover:scale-110 transition-transform" title="Editar">
@@ -808,7 +962,7 @@ const HCP_App = {
                             </div>
                             ${r.just_obs ? `
                                 <div class="mt-2 p-2 bg-pink-50/50 rounded-lg text-[10px] border border-pink-200 text-pink-900">
-                                    <strong class="uppercase">Justificativa [${r.just_status || 'Pendente'}]:</strong> ${r.just_obs}
+                                    <strong class="uppercase">Justificativa [${r.just_status || 'Pendente'}]:</strong> ${r.just_obs} ${r.horas > 0 ? `(${r.horas}h justificadas)` : ''}
                                 </div>
                             ` : ''}
                         </td>
@@ -865,7 +1019,18 @@ const HCP_App = {
      */
     async carregarRelatoriosAdmin() {
         try {
-            const response = await fetch('/api/admin/relatorios');
+            const dia = document.getElementById('relatorio-admin-dia')?.value;
+            const mes = document.getElementById('relatorio-admin-mes')?.value;
+            const ano = document.getElementById('relatorio-admin-ano')?.value;
+
+            let url = '/api/admin/relatorios';
+            const params = new URLSearchParams();
+            if (dia) params.append('dia', dia);
+            if (mes) params.append('mes', mes);
+            if (ano) params.append('ano', ano);
+            if (params.toString()) url += `?${params.toString()}`;
+
+            const response = await fetch(url);
             const data = await response.json();
 
             if (!response.ok) throw new Error(data.mensagem);
@@ -893,17 +1058,37 @@ const HCP_App = {
     /**
      * Baixa o relatório geral de todos os funcionários em PDF
      */
-    async baixarRelatorioGeralPDF() {
+    async baixarRelatorioGeralPDF(formato) {
         try {
-            const response = await fetch('/api/admin/relatorios/pdf');
+            let dia = document.getElementById('relatorio-admin-dia')?.value;
+            let mes = document.getElementById('relatorio-admin-mes')?.value;
+            let ano = document.getElementById('relatorio-admin-ano')?.value;
+
+            if (formato === 'mensal') dia = '';
             
+            if (formato === 'diario' && (!dia || !mes || !ano)) {
+                return alert('Para gerar o PDF Diário, selecione Dia, Mês e Ano nos filtros.');
+            }
+            if (formato === 'mensal' && (!mes || !ano)) {
+                return alert('Para gerar o PDF Mensal, selecione Mês e Ano nos filtros.');
+            }
+
+            let url = '/api/admin/relatorios/pdf';
+            const params = new URLSearchParams();
+            if (dia) params.append('dia', dia);
+            if (mes) params.append('mes', mes);
+            if (ano) params.append('ano', ano);
+            if (params.toString()) url += `?${params.toString()}`;
+
+            const response = await fetch(url);
             if (response.ok) {
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = `Relatorio_Geral_Pontos_${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`;
+                const sufixo = formato === 'diario' ? `Diario_${dia}_${mes}` : `Mensal_${mes}_${ano}`;
+                a.download = `Relatorio_Geral_${sufixo}.pdf`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -1106,7 +1291,7 @@ const HCP_App = {
         const user = this.checkAuth();
         if (!user) return;
 
-        const isAdmin = user.email === this.config.adminEmail;
+        const isAdmin = user.tipo === 'admin' || user.email.toLowerCase() === this.config.adminEmail.toLowerCase();
         const nomeExibicao = user.nome || (isAdmin ? 'Administrador' : user.email.split('@')[0]);
 
         const justificativaName = document.getElementById('justificativa-nome-funcionario');
@@ -1132,6 +1317,12 @@ const HCP_App = {
         const dataFalta = document.getElementById('data_inicio')?.value; 
         const motivo = document.getElementById('observacao')?.value;
         const compensacao = document.getElementById('compensar_horas')?.checked ? 'Sim' : 'Não';
+        let quantidadeHoras = 0;
+
+        if (compensacao === 'Sim') {
+            const horasInput = document.getElementById('horas_compensadas')?.value;
+            quantidadeHoras = parseFloat(horasInput) || 0;
+        }
 
         if (!tipo || !dataFalta || !motivo) return alert('Por favor, preencha o tipo, a data e o motivo da justificativa.');
 
@@ -1144,7 +1335,8 @@ const HCP_App = {
                     tipo,
                     data_falta: dataFalta,
                     motivo,
-                    compensacao
+                    compensacao,
+                    quantidade_horas: quantidadeHoras
                 })
             });
             const data = await response.json();
@@ -1161,50 +1353,236 @@ const HCP_App = {
     },
 
     /**
-     * Placeholder para visualização de alertas
+     * Inicializa a página de redefinição de senha.
      */
-    async verAlertas() {
-        try {
-            const response = await fetch('/api/admin/alertas');
-            const atrasos = await response.json();
-            
-            if (atrasos.length === 0) {
-                alert('Nenhum atraso detectado hoje até o momento.');
-                return;
-            }
-
-            let mensagem = `⚠️ Alertas de Atraso (${atrasos.length}):\n\n`;
-            atrasos.forEach(a => {
-                mensagem += `- ${a.nome}: Entrada às ${a.entrada}\n`;
+    initResetPasswordPage() {
+        // No layout injection for this page, as it's a standalone utility page
+        // Just ensure the CPF input is focused and sections are correctly hidden/shown
+        const cpfInput = document.getElementById('cpf');
+        if (cpfInput) {
+            cpfInput.focus();
+            cpfInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.verifyCpfForReset();
+                }
             });
-            
-            alert(mensagem);
-        } catch (error) {
-            console.error('Erro:', error);
-            alert('Falha ao buscar alertas de atraso.');
+        }
+        const newPasswordInput = document.getElementById('new-password');
+        if (newPasswordInput) {
+            newPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.resetPassword();
+                }
+            });
+        }
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        if (confirmPasswordInput) {
+            confirmPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.resetPassword();
+                }
+            });
         }
     },
 
     /**
-     * Ajusta o Layout (Sidebar) com base no cargo
+     * Verifica o CPF para iniciar o processo de redefinição de senha.
+     */
+    async verifyCpfForReset() {
+        const cpf = document.getElementById('cpf')?.value.replace(/\D/g, ''); // Remove non-digits
+        const messageEl = document.getElementById('cpf-message');
+        const passwordResetSection = document.getElementById('password-reset-section');
+
+        if (!cpf || cpf.length !== 11) {
+            messageEl.textContent = 'Por favor, digite um CPF válido com 11 dígitos.';
+            messageEl.classList.remove('hidden');
+            messageEl.style.color = 'red';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/forgot-password/verify-cpf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cpf })
+            });
+            
+            let data = {};
+            if (response.ok) {
+                data = await response.json();
+                messageEl.textContent = data.mensagem;
+                messageEl.classList.remove('hidden');
+                messageEl.style.color = 'green';
+                passwordResetSection.classList.remove('hidden');
+                document.getElementById('cpf-verification-section').classList.add('hidden'); // Hide CPF input
+                document.getElementById('new-password').focus();
+            } else {
+                data = await response.json().catch(() => ({}));
+                messageEl.textContent = data.mensagem || `Erro ${response.status}: Rota não encontrada ou erro no servidor.`;
+                messageEl.classList.remove('hidden');
+                messageEl.style.color = 'red';
+                passwordResetSection.classList.add('hidden');
+            }
+        } catch (error) {
+            messageEl.textContent = 'Erro ao conectar com o servidor. Verifique sua conexão.';
+            messageEl.classList.remove('hidden');
+            messageEl.style.color = 'red';
+            passwordResetSection.classList.add('hidden');
+            console.error('Erro ao verificar CPF:', error);
+        }
+    },
+
+    /**
+     * Redefine a senha do usuário após a verificação do CPF.
+     */
+    async resetPassword() {
+        const cpf = document.getElementById('cpf')?.value.replace(/\D/g, '');
+        const newPassword = document.getElementById('new-password')?.value;
+        const confirmPassword = document.getElementById('confirm-password')?.value;
+        const messageEl = document.getElementById('cpf-message'); // Reusing message element
+
+        if (!newPassword || !confirmPassword) {
+            messageEl.textContent = 'Por favor, preencha a nova senha e a confirmação.';
+            messageEl.classList.remove('hidden');
+            messageEl.style.color = 'red';
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            messageEl.textContent = 'As senhas não coincidem.';
+            messageEl.classList.remove('hidden');
+            messageEl.style.color = 'red';
+            return;
+        }
+        if (newPassword.length < 6) { // Basic password strength check
+            messageEl.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
+            messageEl.classList.remove('hidden');
+            messageEl.style.color = 'red';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/forgot-password/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cpf, new_password: newPassword })
+            });
+            
+            let data = {};
+            if (response.ok) {
+                data = await response.json();
+                alert(data.mensagem + ' Você será redirecionado para a página de login.');
+                window.location.href = this.config.loginPage;
+            } else {
+                data = await response.json().catch(() => ({}));
+                messageEl.textContent = data.mensagem || 'Erro ao redefinir senha.';
+                messageEl.classList.remove('hidden');
+                messageEl.style.color = 'red';
+            }
+        } catch (error) {
+            messageEl.textContent = 'Erro ao conectar com o servidor. Verifique sua conexão.';
+            messageEl.classList.remove('hidden');
+            messageEl.style.color = 'red';
+            console.error('Erro ao redefinir senha:', error);
+        }
+    },
+
+    /**
+     * Unifica o carregamento de dados do funcionário na página Home (Dashboard + Alertas)
+     * Garante que o mini dashboard só apareça para funcionários.
+     */
+    async carregarHomeFuncionario() {
+        const user = this.checkAuth();
+        const miniDashboard = document.getElementById('employee-mini-dashboard');
+        const adminShortcuts = document.getElementById('admin-shortcuts');
+
+        if (!miniDashboard && !adminShortcuts) return;
+
+        // Exibe atalhos para Administrador
+        if (user && user.tipo === 'admin') {
+            if (adminShortcuts) {
+                adminShortcuts.classList.remove('hidden');
+                adminShortcuts.style.display = 'block';
+            }
+            if (miniDashboard) miniDashboard.classList.add('hidden');
+            return;
+        }
+
+        // Só exibe se for funcionário e tiver ID válido
+        if (user && user.tipo === 'funcionario' && user.id_funcionario) {
+            miniDashboard.classList.remove('hidden');
+            miniDashboard.style.display = 'block'; // Garante exibição caso o CSS use display:none
+
+            // Exibe mensagem de alerta se presente no objeto do usuário
+            const warningMessageEl = document.getElementById('employee-warning-message');
+            if (warningMessageEl) {
+                if (user.warning_message) {
+                    warningMessageEl.textContent = user.warning_message;
+                    warningMessageEl.classList.remove('hidden');
+                } else {
+                    warningMessageEl.classList.add('hidden');
+                }
+            }
+            
+            try {
+                const response = await fetch(`/api/ponto/status/${user.id_funcionario}`);
+                const data = await response.json();
+
+                const campos = {
+                    'dashboard-ponto-entrada': data?.entrada,
+                    'dashboard-ponto-intervalo-s': data?.saida_intervalo,
+                    'dashboard-ponto-intervalo-v': data?.volta_intervalo,
+                    'dashboard-ponto-saida': data?.saida
+                };
+
+                for (let id in campos) {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = campos[id] || '--:--';
+                }
+
+                // Lógica de Alerta de Atraso (Verifica se está ativo e se houve atraso)
+                const configResp = await fetch('/api/config/alertas?t=' + Date.now());
+                const configData = await configResp.json();
+                const elAtraso = document.getElementById('dashboard-alerta-atraso');
+
+                if (elAtraso) {
+                    if (!configData.ativo) {
+                        elAtraso.textContent = 'Desativado';
+                        elAtraso.style.color = '#999';
+                    } else if (data?.entrada) {
+                        const [h, m] = data.entrada.split(':').map(Number);
+                        const estaAtrasado = (h > 8 || (h === 8 && m > 5));
+                        elAtraso.textContent = estaAtrasado ? 'Atrasado' : 'No Prazo';
+                        elAtraso.style.color = estaAtrasado ? '#c91d4f' : '#28a745';
+                    } else {
+                        elAtraso.textContent = 'Pendente';
+                        elAtraso.style.color = '#666';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados do dashboard home:', error);
+            }
+        } else {
+            // Se for admin ou não logado, esconde o dashboard
+            if (miniDashboard) {
+                miniDashboard.classList.add('hidden');
+                miniDashboard.style.display = 'none';
+            }
+            if (adminShortcuts) adminShortcuts.classList.add('hidden');
+            const warningMessageEl = document.getElementById('employee-warning-message');
+            if (warningMessageEl) warningMessageEl.classList.add('hidden');
+        }
+    },
+
+    /**
+     * Ajusta visibilidade de elementos com base no perfil
      */
     initLayout() {
         const user = this.checkAuth();
         if (!user) return;
-
-        const isAdmin = user.email === this.config.adminEmail;
-        
-        // Esconde itens administrativos se não for admin
+        const isAdmin = user.tipo === 'admin';
         document.querySelectorAll('.admin-only').forEach(item => {
-            item.style.setProperty('display', isAdmin ? 'flex' : 'none', 'important');
+            item.style.display = isAdmin ? 'block' : 'none';
         });
-
-        // Atualiza nome no perfil e na Home
-        const userName = user.email.split('@')[0];
-        const profileName = document.querySelector('.profile h2, .welcome-user');
-        if (profileName) {
-            profileName.textContent = isAdmin ? 'Lana Benett' : userName.charAt(0).toUpperCase() + userName.slice(1);
-        }
     }
 };
 

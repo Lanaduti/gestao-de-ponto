@@ -161,7 +161,8 @@ CREATE TABLE public.funcionario (
     setor character varying(50),
     salario_base numeric(10,2),
     data_admissao date,
-    vale_transporte character varying(3)
+    vale_transporte character varying(3),
+    foto TEXT
 );
 
 
@@ -623,6 +624,9 @@ ALTER TABLE ONLY public.desconto
 ALTER TABLE ONLY public.folha_pagamento
     ADD CONSTRAINT folha_pagamento_pkey PRIMARY KEY (id);
 
+-- Adiciona restrição para permitir o funcionamento do ON CONFLICT no Python
+ALTER TABLE ONLY public.folha_pagamento
+    ADD CONSTRAINT folha_pagamento_uniao UNIQUE (id_funcionario, mes, ano);
 
 --
 -- TOC entry 4865 (class 2606 OID 24771)
@@ -746,6 +750,19 @@ ALTER TABLE ONLY public.usuario
 --
 -- PostgreSQL database dump complete
 --
+--
+-- TOC entry 235 (class 1259 OID 24850)
+-- Name: configuracao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.configuracao (
+    chave character varying(50) NOT NULL PRIMARY KEY,
+    valor text
+);
+
+ALTER TABLE public.configuracao OWNER TO postgres;
+
+-- Inicializa o alerta de atraso como desativado por padrão
+INSERT INTO public.configuracao (chave, valor) VALUES ('alertas_atraso_ativo', 'false');
 
 \unrestrict 4FPnHgBJdWfInF2uuQxOIdLNmUBqE5hXd295oxgWx8PphlkJDHKD7CraMabWbRr
-

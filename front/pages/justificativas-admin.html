@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Funcionários - High Control Point</title>
+  <title>Gerenciar Justificativas - High Control Point</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="../componets/layout-styles.css">
   <style>
@@ -20,28 +20,26 @@
                 <img src="logo.png" alt="High Control Point" class="h-20 w-auto object-contain">
             </div>
             <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-                <h2 class="pink-accent text-lg font-bold uppercase tracking-widest">Gestão de Funcionários</h2>
-                <button onclick="window.location.href='cadastro.html'" class="bg-[#FF829D] text-white px-6 py-2 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-sm">
-                    + Novo Funcionário
-                </button>
+                <h2 class="pink-accent text-lg font-bold uppercase tracking-widest text-center">Gestão de Justificativas</h2>
+                <p class="text-xs text-gray-500 font-medium">Analise atestados e pedidos de compensação</p>
             </div>
 
             <div class="overflow-x-auto bg-pink-light rounded-3xl overflow-hidden shadow-sm">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-pink-800 font-bold border-b border-white uppercase text-xs">
-                            <th class="px-6 py-4 border-r border-white tracking-wider">Nome</th>
-                            <th class="px-6 py-4 border-r border-white tracking-wider">CPF</th>
-                            <th class="px-6 py-4 border-r border-white tracking-wider">Cargo</th>
-                            <th class="px-6 py-4 border-r border-white tracking-wider">Setor</th>
-                            <th class="px-6 py-4 border-r border-white tracking-wider">Admissão</th>
+                            <th class="px-6 py-4 border-r border-white tracking-wider">Funcionário</th>
+                            <th class="px-6 py-4 border-r border-white tracking-wider">Data</th>
+                            <th class="px-6 py-4 border-r border-white tracking-wider">Motivo/Tipo</th>
+                            <th class="px-6 py-4 border-r border-white tracking-wider text-center">Compensar?</th>
+                            <th class="px-6 py-4 border-r border-white text-center tracking-wider">Horas</th>
+                            <th class="px-6 py-4 border-r border-white text-center tracking-wider">Status</th>
                             <th class="px-6 py-4 text-center tracking-wider">Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="funcionarios-table-body" class="text-pink-900 font-medium">
-                        <!-- Os dados serão injetados aqui pelo app.js -->
+                    <tbody id="justificativas-admin-table-body" class="text-pink-900 font-medium">
                         <tr>
-                            <td colspan="5" class="px-6 py-10 text-center italic">Carregando funcionários...</td>
+                            <td colspan="7" class="px-6 py-10 text-center italic">Carregando justificativas...</td>
                         </tr>
                     </tbody>
                 </table>

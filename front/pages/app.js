@@ -21,6 +21,19 @@ const HCP_App = {
     },
 
     /**
+     * Helper para evitar XSS ao injetar strings no HTML
+     */
+    escapeHTML(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    },
+
+    /**
      * Executa o login salvando a sessão e redirecionando pelo cargo
      */
     async login(email, password) {
@@ -88,10 +101,8 @@ const HCP_App = {
      * Lógica de redirecionamento: Lana vai para Dashboard, outros para Home
      */
     redirect(email) {
-        const isAdmin = email.toLowerCase() === this.config.adminEmail.toLowerCase();
-        let destination = isAdmin 
-            ? this.config.dashboardPage 
-            : this.config.homePage;
+        // Agora todos os usuários, incluindo o administrador, são redirecionados para a Home ao logar
+        let destination = this.config.homePage;
         
         const isAtRoot = !window.location.pathname.includes('/pages/');
         if (isAtRoot) destination = 'pages/' + destination;
@@ -103,20 +114,23 @@ const HCP_App = {
      * Verifica se o usuário está logado. Se não, manda para o login.
      */
     checkAuth() {
+        const user = JSON.parse(localStorage.getItem('loggedUser'));
         const path = window.location.pathname;
+
         if (path.includes(this.config.loginPage) || path.includes(this.config.resetPasswordPage)) {
+            if (user) this.redirect(user.email);
             return null;
         }
         
-        const user = JSON.parse(localStorage.getItem('loggedUser'));
         if (!user) {
             this.logout();
             return null;
         }
         // Garante que id_funcionario esteja presente para usuários que não são admin
         if (!user.id_funcionario && user.email !== this.config.adminEmail) {
-            console.error("Erro: Usuário logado não possui id_funcionario. Verifique o processo de login/cadastro.");
-            // Opcionalmente, você pode querer deslogar ou redirecionar aqui se for um erro crítico
+            console.error("Sessão inválida: id_funcionario ausente.");
+            this.logout();
+            return null;
         }
         return user;
     },
@@ -155,8 +169,8 @@ const HCP_App = {
                     <a href="perfil.html">
                         <img src="../img/perfil.png" alt="Perfil">
                     </a>
-                    <h2>${user.nome || (isAdmin ? 'Administrador' : user.email.split('@')[0])}</h2>
-                    <p>${isAdmin ? 'Administradora' : (user.cargo || 'Funcionário')}</p>
+                    <h2>${this.escapeHTML(user.nome || (isAdmin ? 'Administrador' : user.email.split('@')[0]))}</h2>
+                    <p>${this.escapeHTML(isAdmin ? 'Administradora' : (user.cargo || 'Funcionário'))}</p>
                 </div>
                 <nav class="menu">
                     <a href="home.html" class="menu-item"><div class="icon-box"><img src="../img/home.png"></div>Home</a>
@@ -727,12 +741,14 @@ const HCP_App = {
                 
                 return `
                     <tr class="table-row-border hover:bg-white/20 transition-colors">
-                        <td class="px-6 py-4 text-sm border-r border-white font-bold">${j.nome}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white font-bold">${this.escapeHTML(j.nome)}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${j.data}</td>
-                        <td class="px-6 py-4 text-sm border-r border-white italic">${j.motivo}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white italic">${this.escapeHTML(j.motivo)}</td>
                         <td class="px-6 py-4 text-sm border-r border-white text-center">${j.compensacao}</td>
-                        <td class="px-6 py-4 text-sm border-r border-white text-center">${j.horas}h</td>
-                        <td class="px-6 py-4 border-r border-white text-center">
+                        <td class="px-6 py-4 text-sm border-r border-white text-center font-bold">
+                            ${j.horas > 0 ? j.horas + 'h' : '--'}
+                        </td>
+                        <td class="px-6 py-4 text-sm border-r border-white text-center">
                             <span class="${statusClass} text-[10px] font-bold px-2 py-1 rounded-full uppercase">${j.status}</span>
                         </td>
                         <td class="px-6 py-4 text-center flex justify-center gap-3">
@@ -886,10 +902,10 @@ const HCP_App = {
             if (tableBody) {
                 tableBody.innerHTML = data.map(f => `
                     <tr class="table-row-border hover:bg-white/20 transition-colors">
-                        <td class="px-6 py-4 text-sm border-r border-white">${f.nome}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white">${this.escapeHTML(f.nome)}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${f.cpf}</td>
-                        <td class="px-6 py-4 text-sm border-r border-white">${f.cargo}</td>
-                        <td class="px-6 py-4 text-sm border-r border-white">${f.setor}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white">${this.escapeHTML(f.cargo)}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white">${this.escapeHTML(f.setor)}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">R$ ${f.salario_base?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${f.vale_transporte === 'S' ? 'Sim' : 'Não'}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${f.data_admissao}</td>
@@ -960,7 +976,7 @@ const HCP_App = {
                                 <span>Entrada: ${r.entrada || '--:--'}</span> | <span>Almoço S.: ${r.saida_intervalo || '--:--'}</span> | 
                                 <span>Almoço V.: ${r.volta_intervalo || '--:--'}</span> | <span>Saída: ${r.saida || '--:--'}</span>
                             </div>
-                            ${r.just_obs ? `
+                            ${r.just_obs || r.compensacao ? `
                                 <div class="mt-2 p-2 bg-pink-50/50 rounded-lg text-[10px] border border-pink-200 text-pink-900">
                                     <strong class="uppercase">Justificativa [${r.just_status || 'Pendente'}]:</strong> ${r.just_obs} ${r.horas > 0 ? `(${r.horas}h justificadas)` : ''}
                                 </div>
@@ -1039,7 +1055,15 @@ const HCP_App = {
             if (tableBody) {
                 tableBody.innerHTML = data.map(r => `
                     <tr class="table-row-border hover:bg-white/20 transition-colors">
-                        <td class="px-6 py-4 text-sm border-r border-white font-bold">${r.nome}</td>
+                        <td class="px-6 py-4 text-sm border-r border-white font-bold">
+                            ${this.escapeHTML(r.nome)}
+                            ${r.just_obs ? `
+                                <div class="mt-1 text-[10px] text-pink-700 italic border-t border-white/20 pt-1">
+                                    <strong>Justificativa [${r.just_status}]:</strong> ${this.escapeHTML(r.just_obs)}
+                                    ${r.compensacao ? ` | Compensar: ${r.compensacao}` : ''}
+                                    ${r.horas > 0 ? ` (${r.horas}h)` : ''}
+                                </div>` : ''}
+                        </td>
                         <td class="px-6 py-4 text-sm border-r border-white">${r.data}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${r.entrada || '--:--'}</td>
                         <td class="px-6 py-4 text-sm border-r border-white">${r.saida_intervalo || '--:--'}</td>
@@ -1083,15 +1107,15 @@ const HCP_App = {
             const response = await fetch(url);
             if (response.ok) {
                 const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
+                const blobUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
-                a.href = url;
+                a.href = blobUrl;
                 const sufixo = formato === 'diario' ? `Diario_${dia}_${mes}` : `Mensal_${mes}_${ano}`;
                 a.download = `Relatorio_Geral_${sufixo}.pdf`;
                 document.body.appendChild(a);
                 a.click();
-                window.URL.revokeObjectURL(url);
+                window.URL.revokeObjectURL(blobUrl);
             } else {
                 alert('Erro ao gerar PDF do relatório geral.');
             }
@@ -1317,12 +1341,10 @@ const HCP_App = {
         const dataFalta = document.getElementById('data_inicio')?.value; 
         const motivo = document.getElementById('observacao')?.value;
         const compensacao = document.getElementById('compensar_horas')?.checked ? 'Sim' : 'Não';
-        let quantidadeHoras = 0;
-
-        if (compensacao === 'Sim') {
-            const horasInput = document.getElementById('horas_compensadas')?.value;
-            quantidadeHoras = parseFloat(horasInput) || 0;
-        }
+        
+        // Captura as horas se o campo existir e tiver valor, independente do checkbox
+        const horasInput = document.getElementById('horas_compensadas')?.value;
+        const quantidadeHoras = (horasInput && horasInput.trim() !== "") ? parseFloat(horasInput.replace(',', '.')) : 0;
 
         if (!tipo || !dataFalta || !motivo) return alert('Por favor, preencha o tipo, a data e o motivo da justificativa.');
 

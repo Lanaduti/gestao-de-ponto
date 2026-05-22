@@ -1,6 +1,18 @@
 --
 -- PostgreSQL database dump
 --
+ALTER TABLE ONLY public.folha_pagamento
+    ADD CONSTRAINT folha_pagamento_uniao UNIQUE (id_funcionario, mes, ano);
+
+CREATE TABLE public.configuracao (
+    chave character varying(50) NOT NULL PRIMARY KEY,
+    valor text
+);
+
+ALTER TABLE public.configuracao OWNER TO postgres;
+
+-- Inicializa o alerta de atraso como desativado por padrão
+INSERT INTO public.configuracao (chave, valor) VALUES ('alertas_atraso_ativo', 'false');
 
 \restrict 4FPnHgBJdWfInF2uuQxOIdLNmUBqE5hXd295oxgWx8PphlkJDHKD7CraMabWbRr
 

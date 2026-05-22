@@ -14,6 +14,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'front')
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 
+def safe_str(s):
+    """Converte strings para latin-1 substituindo caracteres incompatíveis para evitar erros no FPDF."""
+    if not s:
+        return ""
+    return str(s).encode('latin-1', 'replace').decode('latin-1')
+
 def calcular_inss(salario):
     """Cálculo progressivo do INSS baseado na lógica do folha_service."""
     if salario <= 1518.00:
@@ -124,9 +130,6 @@ def login():
 @app.route('/api/admin/gerar-folha', methods=['POST'])
 def gerar_folha_mensal():
     """Calcula a folha no banco e retorna um PDF com o relatório."""
-    def safe_str(s): 
-        return str(s or "").encode('latin-1', 'replace').decode('latin-1')
-
     conn = conectar_banco()
     if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
     
@@ -306,8 +309,6 @@ def gerar_contracheque_pdf(id_funcionario):
     except ValueError:
         mes_int, ano_int = hoje.month, hoje.year
 
-    def safe_str(s): return str(s or "").encode('latin-1', 'replace').decode('latin-1')
-
     conn = conectar_banco()
     if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
     try:
@@ -318,29 +319,46 @@ def gerar_contracheque_pdf(id_funcionario):
         if not func: return jsonify({"mensagem": "Funcionário não encontrado"}), 404
         
         # Busca dados da folha para o período
+        # Se a folha já foi gerada, usa os valores calculados
         cursor.execute("""
             SELECT salario_bruto, descontos, salario_liquido 
             FROM folha_pagamento 
             WHERE id_funcionario = %s AND mes = %s AND ano = %s
         """, (id_funcionario, mes_int, ano_int))
         folha = cursor.fetchone()
-
-        if not folha:
-            cursor.execute("SELECT SUM(valor) as total FROM desconto WHERE id_funcionario = %s", (id_funcionario,))
-            res_desc = cursor.fetchone()
-            total_descontos = float(res_desc['total'] or 0)
-            bruto = float(func.get('salario_base') or 0.0)
-            folha = {
-                "salario_bruto": bruto,
-                "descontos": total_descontos,
-                "salario_liquido": max(0, bruto - total_descontos)
-            }
         
-        # Busca detalhes de descontos (tabela rh_sistemas usa coluna 'tipo')
-        cursor.execute("SELECT tipo as descricao, valor FROM desconto WHERE id_funcionario = %s", (id_funcionario,))
-        descontos_itens = cursor.fetchall()
+        salario_bruto_calc = float(func.get('salario_base') or 0.0)
+        total_descontos_calc = 0.0
+        salario_liquido_calc = 0.0
 
-        # Gerar PDF
+        # Se a folha não foi gerada, calcula em tempo real para o PDF
+        if not folha:
+            desc_inss = calcular_inss(salario_bruto_calc)
+            desc_vt = salario_bruto_calc * 0.06 if func.get('vale_transporte') == 'S' else 0.0
+            
+            cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM desconto WHERE id_funcionario = %s", (id_funcionario,))
+            total_manuais = float(cursor.fetchone()['total'])
+            
+            total_descontos_calc = desc_inss + desc_vt + total_manuais
+            salario_liquido_calc = max(0, salario_bruto_calc - total_descontos_calc)
+        else:
+            salario_bruto_calc = float(folha['salario_bruto'])
+            total_descontos_calc = float(folha['descontos'])
+            salario_liquido_calc = float(folha['salario_liquido'])
+
+        # Monta a lista detalhada de itens para o PDF
+        itens_detalhados_pdf = []
+        itens_detalhados_pdf.append({"descricao": "Salário Base", "vencimento": salario_bruto_calc, "desconto": 0.0})
+        
+        itens_detalhados_pdf.append({"descricao": "INSS (Previdência)", "vencimento": 0.0, "desconto": calcular_inss(salario_bruto_calc)})
+        if func.get('vale_transporte') == 'S':
+            itens_detalhados_pdf.append({"descricao": "Vale Transporte (6%)", "vencimento": 0.0, "desconto": salario_bruto_calc * 0.06})
+
+        cursor.execute("SELECT tipo as descricao, valor FROM desconto WHERE id_funcionario = %s", (id_funcionario,))
+        manuais = cursor.fetchall()
+        itens_detalhados_pdf.extend([{"descricao": m['descricao'], "vencimento": 0.0, "desconto": float(m['valor'] or 0)} for m in manuais])
+
+        # Geração do PDF
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("helvetica", "B", 16)
@@ -363,23 +381,21 @@ def gerar_contracheque_pdf(id_funcionario):
         pdf.cell(45, 8, "Vencimentos", border=1, align="R")
         pdf.cell(45, 8, "Descontos", border=1, align="R")
         pdf.ln()
-
         pdf.set_font("helvetica", "", 10)
-        pdf.cell(100, 8, "Salário Base", border=1)
-        pdf.cell(45, 8, f"R$ {float(folha.get('salario_bruto') or 0):,.2f}", border=1, align="R")
-        pdf.cell(45, 8, "-", border=1, align="R")
-        pdf.ln()
-
-        for item in descontos_itens:
+        for item in itens_detalhados_pdf:
             pdf.cell(100, 8, safe_str(item['descricao']), border=1)
-            pdf.cell(45, 8, "-", border=1, align="R")
-            pdf.cell(45, 8, f"R$ {float(item['valor'] or 0):,.2f}", border=1, align="R")
+            if item['vencimento'] > 0:
+                pdf.cell(45, 8, f"R$ {item['vencimento']:,.2f}", border=1, align="R")
+                pdf.cell(45, 8, "-", border=1, align="R")
+            else:
+                pdf.cell(45, 8, "-", border=1, align="R")
+                pdf.cell(45, 8, f"R$ {item['desconto']:,.2f}", border=1, align="R")
             pdf.ln()
 
         pdf.ln(5)
         pdf.set_text_color(164, 19, 60)
         pdf.cell(145, 8, safe_str("Líquido a Receber:"), align="R")
-        pdf.cell(45, 8, f"R$ {float(folha.get('salario_liquido') or 0):,.2f}", align="R")
+        pdf.cell(45, 8, f"R$ {salario_liquido_calc:,.2f}", align="R")
 
         pdf_bytes = pdf.output()
         if isinstance(pdf_bytes, str): pdf_bytes = pdf_bytes.encode('latin-1')
@@ -421,11 +437,14 @@ def listar_justificativas_admin():
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         query = """
             SELECT rj.id, f.nome, to_char(rj.data_falta, 'DD/MM/YYYY') as data,
-                   rj.motivo, rj.status, rj.compensacao, COALESCE(j.quantidade_horas, 0) as horas
+                   rj.motivo, rj.status, rj.compensacao, 
+                   (SELECT COALESCE(SUM(j.quantidade_horas), 0) 
+                    FROM justificativa j 
+                    WHERE j.id_funcionario = rj.id_funcionario 
+                    AND j.data_justificativa::DATE = rj.data_falta::DATE) as horas
             FROM registro_justificativa rj
             JOIN funcionario f ON rj.id_funcionario = f.id
-            LEFT JOIN justificativa j ON rj.id_funcionario = j.id_funcionario AND rj.data_falta = j.data_justificativa
-            ORDER BY rj.status DESC, rj.data_falta DESC
+            ORDER BY CASE WHEN rj.status = 'Pendente' THEN 1 ELSE 2 END, rj.data_falta DESC, rj.id DESC
         """
         cursor.execute(query)
         justificativas = cursor.fetchall()
@@ -601,29 +620,40 @@ def listar_relatorios_gerais():
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         query = """
-            SELECT f.nome, to_char(rp.data_registro, 'DD/MM/YYYY') as data, 
+            SELECT f.nome, 
+                   COALESCE(to_char(rp.data_registro, 'DD/MM/YYYY'), to_char(rj.data_falta, 'DD/MM/YYYY')) as data, 
                    to_char(rp.entrada, 'HH24:MI') as entrada, to_char(rp.saida_intervalo, 'HH24:MI') as saida_intervalo, 
-                   to_char(rp.volta_intervalo, 'HH24:MI') as volta_intervalo, to_char(rp.saida, 'HH24:MI') as saida 
-            FROM registro_ponto rp JOIN funcionario f ON rp.id_funcionario = f.id 
+                   to_char(rp.volta_intervalo, 'HH24:MI') as volta_intervalo, to_char(rp.saida, 'HH24:MI') as saida,
+                   rj.motivo as just_obs, rj.status as just_status, rj.compensacao,
+                   (SELECT COALESCE(SUM(j.quantidade_horas), 0) 
+                    FROM justificativa j 
+                    WHERE j.id_funcionario = rj.id_funcionario 
+                    AND j.data_justificativa::DATE = rj.data_falta::DATE) as horas
+            FROM registro_ponto rp 
+            FULL OUTER JOIN registro_justificativa rj ON rp.id_funcionario = rj.id_funcionario AND rp.data_registro::DATE = rj.data_falta::DATE
+            JOIN funcionario f ON COALESCE(rp.id_funcionario, rj.id_funcionario) = f.id
         """
         where_clauses = []
         params = []
         if dia:
-            where_clauses.append("EXTRACT(DAY FROM rp.data_registro) = %s")
+            where_clauses.append("EXTRACT(DAY FROM COALESCE(rp.data_registro, rj.data_falta)) = %s")
             params.append(dia)
         if mes:
-            where_clauses.append("EXTRACT(MONTH FROM rp.data_registro) = %s")
+            where_clauses.append("EXTRACT(MONTH FROM COALESCE(rp.data_registro, rj.data_falta)) = %s")
             params.append(mes)
         if ano:
-            where_clauses.append("EXTRACT(YEAR FROM rp.data_registro) = %s")
+            where_clauses.append("EXTRACT(YEAR FROM COALESCE(rp.data_registro, rj.data_falta)) = %s")
             params.append(ano)
             
         if where_clauses:
             query += " WHERE " + " AND ".join(where_clauses)
             
-        query += " ORDER BY rp.data_registro DESC, rp.entrada DESC"
+        query += " ORDER BY COALESCE(rp.data_registro, rj.data_falta) DESC, f.nome ASC"
         cursor.execute(query, tuple(params))
-        return jsonify(cursor.fetchall()), 200
+        registros = cursor.fetchall()
+        for r in registros:
+            r['horas'] = float(r['horas']) if r.get('horas') is not None else 0.0
+        return jsonify(registros), 200
     finally:
         cursor.close()
         conn.close()
@@ -640,27 +670,35 @@ def relatorio_geral_pdf():
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         query = """
-            SELECT f.nome, to_char(rp.data_registro, 'DD/MM/YYYY') as data, 
-                   rp.entrada, rp.saida_intervalo, rp.volta_intervalo, rp.saida 
+            SELECT f.nome, 
+                   COALESCE(to_char(rp.data_registro, 'DD/MM/YYYY'), to_char(rj.data_falta, 'DD/MM/YYYY')) as data, 
+                   to_char(rp.entrada, 'HH24:MI') as entrada, to_char(rp.saida_intervalo, 'HH24:MI') as saida_intervalo, 
+                   to_char(rp.volta_intervalo, 'HH24:MI') as volta_intervalo, to_char(rp.saida, 'HH24:MI') as saida,
+                   rj.motivo as just_obs, rj.status as just_status, rj.compensacao,
+                   (SELECT COALESCE(SUM(j.quantidade_horas), 0) 
+                    FROM justificativa j 
+                    WHERE j.id_funcionario = rj.id_funcionario 
+                    AND j.data_justificativa::DATE = rj.data_falta::DATE) as horas
             FROM registro_ponto rp
-            JOIN funcionario f ON rp.id_funcionario = f.id
+            FULL OUTER JOIN registro_justificativa rj ON rp.id_funcionario = rj.id_funcionario AND rp.data_registro::DATE = rj.data_falta::DATE
+            JOIN funcionario f ON COALESCE(rp.id_funcionario, rj.id_funcionario) = f.id
         """
         where_clauses = []
         params = []
         if dia:
-            where_clauses.append("EXTRACT(DAY FROM rp.data_registro) = %s")
+            where_clauses.append("EXTRACT(DAY FROM COALESCE(rp.data_registro, rj.data_falta)) = %s")
             params.append(dia)
         if mes:
-            where_clauses.append("EXTRACT(MONTH FROM rp.data_registro) = %s")
+            where_clauses.append("EXTRACT(MONTH FROM COALESCE(rp.data_registro, rj.data_falta)) = %s")
             params.append(mes)
         if ano:
-            where_clauses.append("EXTRACT(YEAR FROM rp.data_registro) = %s")
+            where_clauses.append("EXTRACT(YEAR FROM COALESCE(rp.data_registro, rj.data_falta)) = %s")
             params.append(ano)
             
         if where_clauses:
             query += " WHERE " + " AND ".join(where_clauses)
             
-        query += " ORDER BY rp.data_registro DESC, rp.entrada DESC"
+        query += " ORDER BY COALESCE(rp.data_registro, rj.data_falta) DESC, f.nome ASC"
         cursor.execute(query, tuple(params))
         registros = cursor.fetchall()
 
@@ -706,12 +744,25 @@ def relatorio_geral_pdf():
 
             # Linha do Funcionário
             pdf.set_font("helvetica", "", 8)
-            pdf.cell(75, 8, str(r['nome']), border=1)
+            pdf.cell(75, 8, safe_str(r['nome']), border=1)
             pdf.cell(25, 8, str(r['entrada'] or '--:--'), border=1, align="C")
             pdf.cell(25, 8, str(r['saida_intervalo'] or '--:--'), border=1, align="C")
             pdf.cell(25, 8, str(r['volta_intervalo'] or '--:--'), border=1, align="C")
             pdf.cell(25, 8, str(r['saida'] or '--:--'), border=1, align="C")
             pdf.ln()
+            
+            if r.get('just_obs'):
+                pdf.set_font("helvetica", "I", 7)
+                just_info = f"   Justificativa ({r['just_status'] or 'Pendente'}): {r['just_obs']}"
+                if r.get('compensacao'):
+                    just_info += f" | Compensar: {r['compensacao']}"
+                
+                horas_val = float(r.get('horas') or 0.0)
+                if horas_val > 0:
+                    just_info += f" ({horas_val}h)"
+                
+                pdf.cell(0, 6, safe_str(just_info), border='LRB', ln=True)
+                pdf.set_font("helvetica", "", 8)
 
         pdf_bytes = pdf.output()
         # Garante compatibilidade de bytes para o envio do arquivo
@@ -739,15 +790,16 @@ def relatorio_funcionario(id_funcionario):
     if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        # Ajustado o JOIN para usar ::DATE e COALESCE no tipo da justificativa
         query = """
             SELECT COALESCE(to_char(rp.data_registro, 'DD/MM/YYYY'), to_char(rj.data_falta, 'DD/MM/YYYY')) as data, 
                    to_char(rp.entrada, 'HH24:MI') as entrada, to_char(rp.saida_intervalo, 'HH24:MI') as saida_intervalo, 
                    to_char(rp.volta_intervalo, 'HH24:MI') as volta_intervalo, to_char(rp.saida, 'HH24:MI') as saida,
-                   j.tipo as just_tipo, rj.motivo as just_obs, rj.status as just_status, COALESCE(j.quantidade_horas, 0) as horas
+                   COALESCE(j.tipo, '') as just_tipo, rj.motivo as just_obs, rj.status as just_status, COALESCE(j.quantidade_horas, 0) as horas
             FROM registro_ponto rp
             FULL OUTER JOIN registro_justificativa rj ON rp.id_funcionario = rj.id_funcionario 
-                AND rp.data_registro = rj.data_falta
-            LEFT JOIN justificativa j ON rj.id_funcionario = j.id_funcionario AND rj.data_falta = j.data_justificativa
+                AND rp.data_registro::DATE = rj.data_falta::DATE
+            LEFT JOIN justificativa j ON rj.id_funcionario = j.id_funcionario AND rj.data_falta::DATE = j.data_justificativa::DATE
             WHERE (rp.id_funcionario = %s OR rj.id_funcionario = %s)"""
         params = [id_funcionario, id_funcionario]
 
@@ -788,15 +840,16 @@ def relatorio_funcionario_pdf(id_funcionario):
         if not func: return jsonify({"mensagem": "Funcionário não encontrado"}), 404
         func_nome = func['nome']
 
+        # Sincronização da query do PDF com o cast ::DATE
         query = """
             SELECT COALESCE(to_char(rp.data_registro, 'DD/MM/YYYY'), to_char(rj.data_falta, 'DD/MM/YYYY')) as data, 
                    to_char(rp.entrada, 'HH24:MI') as entrada, to_char(rp.saida_intervalo, 'HH24:MI') as saida_intervalo, 
                    to_char(rp.volta_intervalo, 'HH24:MI') as volta_intervalo, to_char(rp.saida, 'HH24:MI') as saida,
-                   j.tipo as just_tipo, rj.motivo as just_obs, rj.status as just_status
+                   COALESCE(j.tipo, '') as just_tipo, rj.motivo as just_obs, rj.status as just_status, COALESCE(j.quantidade_horas, 0) as horas
             FROM registro_ponto rp
             FULL OUTER JOIN registro_justificativa rj ON rp.id_funcionario = rj.id_funcionario 
-                AND rp.data_registro = rj.data_falta
-            LEFT JOIN justificativa j ON rj.id_funcionario = j.id_funcionario AND rj.data_falta = j.data_justificativa
+                AND rp.data_registro::DATE = rj.data_falta::DATE
+            LEFT JOIN justificativa j ON rj.id_funcionario = j.id_funcionario AND rj.data_falta::DATE = j.data_justificativa::DATE
             WHERE (rp.id_funcionario = %s OR rj.id_funcionario = %s)"""
         params = [id_funcionario, id_funcionario]
         if mes:
@@ -840,8 +893,9 @@ def relatorio_funcionario_pdf(id_funcionario):
             pdf.ln()
             
             if r.get('just_tipo'):
+                just_hours_str = f" ({float(r['horas'] or 0.0)}h justificadas)" if float(r['horas'] or 0.0) > 0 else ""
                 pdf.set_font("helvetica", "I", 8)
-                pdf.cell(0, 8, f"   Justificativa ({r['just_tipo']} - Status: {r['just_status'] or 'Pendente'}): {r['just_obs'] or 'Sem observações'}", border='LRB', ln=True)
+                pdf.cell(0, 8, safe_str(f"   Justificativa ({r['just_tipo']} - Status: {r['just_status'] or 'Pendente'}): {r['just_obs'] or 'Sem observações'}{just_hours_str}"), border='LRB', ln=True)
                 pdf.set_font("helvetica", "", 10)
 
         pdf_bytes = pdf.output()
@@ -909,6 +963,10 @@ def registrar_ponto_api():
         agora_dt = datetime.now(fuso_brasil)
         hoje = agora_dt.date()
         agora_time = agora_dt.strftime('%H:%M:%S')
+
+        # Whitelist para evitar qualquer manipulação de coluna na query
+        if coluna not in ["entrada", "saida_intervalo", "volta_intervalo", "saida"]:
+            return jsonify({"mensagem": "Coluna inválida"}), 400
 
         # Verifica se já existe um registro de ponto para este funcionário hoje
         cursor.execute("SELECT id FROM registro_ponto WHERE id_funcionario = %s AND data_registro = %s", (id_func, hoje))
@@ -1008,7 +1066,7 @@ def registrar_justificativa():
         quantidade_horas_req = float(quantidade_horas_req)
     except (ValueError, TypeError):
         quantidade_horas_req = 0.0
-    final_quantidade_horas = quantidade_horas_req if horas_compensadas_bool else 0.0
+    final_quantidade_horas = quantidade_horas_req # Remove restrição de compensação para persistência
 
     if not all([id_funcionario, tipo, data_falta, motivo]):
         return jsonify({"mensagem": "Dados incompletos para registrar justificativa."}), 400

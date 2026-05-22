@@ -34,14 +34,8 @@
                     return setTimeout(iniciarRoteamento, 100);
                 }
 
-                const rawData = window.localStorage.getItem('loggedUser');
-                const loggedUser = rawData ? JSON.parse(rawData) : null;
-
-                if (!loggedUser) {
-                    window.location.replace("pages/Login.html");
-                } else {
-                    HCP.redirect(loggedUser.email);
-                }
+                // Sempre redireciona para a página de login ao iniciar, ignorando sessões salvas
+                window.location.replace("pages/Login.html");
             } catch (e) {
                 window.location.replace("pages/Login.html");
             }

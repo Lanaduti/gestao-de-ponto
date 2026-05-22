@@ -8,6 +8,7 @@ from fpdf import FPDF
 import io
 import os
 from datetime import datetime
+import webbrowser
 import pytz
 
 # Configuração do Flask para servir os arquivos do frontend
@@ -24,42 +25,55 @@ def safe_str(s):
     return str(s).encode('latin-1', 'replace').decode('latin-1')
 
 def calcular_inss(salario):
-    """Cálculo progressivo do INSS."""
-    if salario <= 1518.00:
+    """Cálculo progressivo real do INSS (Tabela 2024)."""
+    aliq_1 = 1412.00 * 0.075
+    aliq_2 = (2666.68 - 1412.00) * 0.09
+    aliq_3 = (4000.03 - 2666.68) * 0.12
+    aliq_4 = (7786.02 - 4000.03) * 0.14
+    teto = aliq_1 + aliq_2 + aliq_3 + aliq_4
+
+    if salario <= 1412.00:
         return salario * 0.075
-    elif salario <= 2793.88:
-        return salario * 0.09
-    elif salario <= 4190.83:
-        return salario * 0.12
-    else:
-        return salario * 0.14
+    elif salario <= 2666.68:
+        return aliq_1 + ((salario - 1412.00) * 0.09)
+    elif salario <= 4000.03:
+        return aliq_1 + aliq_2 + ((salario - 2666.68) * 0.12)
+    elif salario <= 7786.02:
+        return aliq_1 + aliq_2 + aliq_3 + ((salario - 4000.03) * 0.14)
+    return teto
+
+def calcular_fgts(salario):
+    """Cálculo do FGTS (8%). É um encargo da empresa, exibido para o funcionário."""
+    return salario * 0.08
+
+GRACE_PERIOD_TIME = '08:05:00'
 
 def get_employees_with_accumulated_delays(conn):
     """Retorna uma lista de funcionários com 2 ou mais dias de atraso."""
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    fuso_brasil = pytz.timezone("America/Sao_Paulo")
-    hoje = datetime.now(fuso_brasil).date()
+    try:
+        fuso_brasil = pytz.timezone("America/Sao_Paulo")
+        hoje = datetime.now(fuso_brasil).date()
 
-    query = """
-        SELECT
-            f.id,
-            f.nome
-        FROM
-            funcionario f
-        WHERE
-            f.id IN (SELECT id_funcionario FROM registro_ponto WHERE data_registro = %s AND entrada > '08:05:00')
-            AND f.id IN (SELECT id_funcionario FROM registro_ponto WHERE data_registro = %s - INTERVAL '1 day' AND entrada > '08:05:00')
-    """
-    cursor.execute(query, (hoje, hoje))
-    return cursor.fetchall()
+        query = """
+            SELECT
+                f.id,
+                f.nome
+            FROM
+                funcionario f
+            WHERE
+                f.id IN (SELECT id_funcionario FROM registro_ponto WHERE data_registro = %s AND entrada > %s)
+                AND f.id IN (SELECT id_funcionario FROM registro_ponto WHERE data_registro = %s - INTERVAL '1 day' AND entrada > %s)
+        """
+        cursor.execute(query, (hoje, GRACE_PERIOD_TIME, hoje, GRACE_PERIOD_TIME))
+        return cursor.fetchall()
+    finally:
+        cursor.close()
 
 @app.route('/')
 def index():
-    """Serve o arquivo index.html principal como porta de entrada."""
-    # Se não houver index.html, redireciona para a página de login
-    if not os.path.exists(os.path.join(app.static_folder, 'index.html')):
-        return redirect('/pages/Login.html')
-    return send_from_directory(app.static_folder, 'index.html')
+    """Redireciona para a página de login como porta de entrada padrão."""
+    return redirect('/pages/Login.html')
 
 @app.route('/api/status')
 def status_conexao():
@@ -156,6 +170,7 @@ def gerar_folha_mensal():
             # Cálculos Automáticos (INSS e VT)
             desc_inss = calcular_inss(salario_bruto)
             desc_vt = salario_bruto * 0.06 if f.get('vale_transporte') == 'S' else 0
+            valor_fgts = calcular_fgts(salario_bruto)
             
             # Busca soma de descontos para o funcionário
             cursor.execute("SELECT SUM(valor) as total FROM desconto WHERE id_funcionario = %s", (f['id'],))
@@ -165,16 +180,17 @@ def gerar_folha_mensal():
             total_descontos = desc_inss + desc_vt + total_manuais
             salario_liquido = max(0, salario_bruto - total_descontos)
 
-            # 2. Insere ou atualiza a folha do mês
+            # 2. Insere ou atualiza a folha do mês (Armazenando FGTS para registro)
             query_folha = """
-                INSERT INTO folha_pagamento (id_funcionario, mes, ano, salario_bruto, descontos, salario_liquido)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO folha_pagamento (id_funcionario, mes, ano, salario_bruto, descontos, salario_liquido, fgts_referencia)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id_funcionario, mes, ano) DO UPDATE SET 
                 salario_bruto=EXCLUDED.salario_bruto, 
                 descontos=EXCLUDED.descontos, 
-                salario_liquido=EXCLUDED.salario_liquido
+                salario_liquido=EXCLUDED.salario_liquido,
+                fgts_referencia=EXCLUDED.fgts_referencia
             """
-            cursor.execute(query_folha, (f['id'], mes, ano, salario_bruto, total_descontos, salario_liquido))
+            cursor.execute(query_folha, (f['id'], mes, ano, salario_bruto, total_descontos, salario_liquido, valor_fgts))
             
             pdf_list.append({
                 "nome": f['nome'],
@@ -256,7 +272,7 @@ def buscar_contracheque(id_funcionario):
 
         # Tenta buscar dados já processados na folha_pagamento
         cursor.execute("""
-            SELECT salario_bruto, descontos, salario_liquido 
+            SELECT salario_bruto, descontos, salario_liquido, fgts_referencia
             FROM folha_pagamento 
             WHERE id_funcionario = %s AND mes = %s AND ano = %s
         """, (id_funcionario, mes, ano))
@@ -266,6 +282,7 @@ def buscar_contracheque(id_funcionario):
             # Se a folha ainda não foi gerada, calculamos em tempo real
             desc_inss = calcular_inss(bruto_base)
             desc_vt = bruto_base * 0.06 if func.get('vale_transporte') == 'S' else 0
+            valor_fgts = calcular_fgts(bruto_base)
             
             cursor.execute("SELECT SUM(valor) as total FROM desconto WHERE id_funcionario = %s", (id_funcionario,))
             res_desc = cursor.fetchone()
@@ -275,12 +292,14 @@ def buscar_contracheque(id_funcionario):
             folha = {
                 "salario_bruto": bruto_base,
                 "descontos": total_descontos,
-                "salario_liquido": max(0, bruto_base - total_descontos)
+                "salario_liquido": max(0, bruto_base - total_descontos),
+                "fgts_referencia": valor_fgts
             }
         
         # Monta a lista detalhada de itens para o Frontend
         itens_detalhados = []
         itens_detalhados.append({"descricao": "INSS (Previdência)", "valor": calcular_inss(bruto_base)})
+        itens_detalhados.append({"descricao": "FGTS (Ref. 8%)", "valor": calcular_fgts(bruto_base), "informativo": True})
         if func.get('vale_transporte') == 'S':
             itens_detalhados.append({"descricao": "Vale Transporte (6%)", "valor": bruto_base * 0.06})
 
@@ -352,6 +371,7 @@ def gerar_contracheque_pdf(id_funcionario):
         itens_detalhados_pdf.append({"descricao": "Salário Base", "vencimento": salario_bruto_calc, "desconto": 0.0})
         
         itens_detalhados_pdf.append({"descricao": "INSS (Previdência)", "vencimento": 0.0, "desconto": calcular_inss(salario_bruto_calc)})
+        itens_detalhados_pdf.append({"descricao": "FGTS (Informativo)", "vencimento": 0.0, "desconto": 0.0, "obs": f"R$ {calcular_fgts(salario_bruto_calc):,.2f}"})
         if func.get('vale_transporte') == 'S':
             itens_detalhados_pdf.append({"descricao": "Vale Transporte (6%)", "vencimento": 0.0, "desconto": salario_bruto_calc * 0.06})
 
@@ -388,6 +408,9 @@ def gerar_contracheque_pdf(id_funcionario):
             if item['vencimento'] > 0:
                 pdf.cell(45, 8, f"R$ {item['vencimento']:,.2f}", border=1, align="R")
                 pdf.cell(45, 8, "-", border=1, align="R")
+            elif item.get('obs'):
+                pdf.cell(45, 8, item['obs'], border=1, align="R")
+                pdf.cell(45, 8, "INF.", border=1, align="R")
             else:
                 pdf.cell(45, 8, "-", border=1, align="R")
                 pdf.cell(45, 8, f"R$ {item['desconto']:,.2f}", border=1, align="R")
@@ -972,7 +995,7 @@ def registrar_ponto_api():
         agora_time = agora_dt.strftime('%H:%M:%S')
 
         # Verifica se já existe um registro de ponto para este funcionário hoje
-        cursor.execute("SELECT id FROM registro_ponto WHERE id_funcionario = %s AND data_registro = %s", (id_func, hoje))
+        cursor.execute(f"SELECT id, {coluna} FROM registro_ponto WHERE id_funcionario = %s AND data_registro = %s", (id_func, hoje))
         registro = cursor.fetchone()
 
         # Verifica se a coluna já possui um valor para o dia atual
@@ -1203,6 +1226,8 @@ def obter_config_alertas():
         ativo = res[0] == 'true' if res else False
         return jsonify({"ativo": ativo}), 200
     finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
         conn.close()
 
 @app.route('/api/admin/config/alertas', methods=['POST'])
@@ -1213,6 +1238,7 @@ def salvar_config_alertas():
     
     conn = conectar_banco()
     if not conn: return jsonify({"mensagem": "Erro de conexão"}), 500
+    cursor = None
     try:
         cursor = conn.cursor()
         cursor.execute("""
@@ -1225,6 +1251,8 @@ def salvar_config_alertas():
     except Exception as e:
         return jsonify({"mensagem": str(e)}), 500
     finally:
+        if cursor:
+            cursor.close()
         conn.close()
 
 @app.route('/<path:path>')
@@ -1235,17 +1263,10 @@ if __name__ == '__main__':
     print(f"\n--- Servidor High Control Point ---")
     print(f"Pasta do Frontend: {FRONTEND_DIR}")
     print(f"Acesse: http://localhost:5000\n")
-    app.run(debug=True, port=5000)
-        return jsonify({"mensagem": str(e)}), 500
-    finally:
-        conn.close()
 
-@app.route('/<path:path>')
-def static_files(path):
-    return send_from_directory(app.static_folder, path)
+    # Abre o navegador automaticamente na página de login ao iniciar
+    # O check de WERKZEUG_RUN_MAIN evita que o navegador abra duas vezes devido ao reloader do Flask
+    if not os.environ.get("WERKZEUG_RUN_MAIN"):
+        webbrowser.open("http://localhost:5000")
 
-if __name__ == '__main__':
-    print(f"\n--- Servidor High Control Point ---")
-    print(f"Pasta do Frontend: {FRONTEND_DIR}")
-    print(f"Acesse: http://localhost:5000\n")
     app.run(debug=True, port=5000)

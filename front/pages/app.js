@@ -118,7 +118,8 @@ const HCP_App = {
         const path = window.location.pathname;
 
         if (path.includes(this.config.loginPage) || path.includes(this.config.resetPasswordPage)) {
-            if (user) this.redirect(user.email);
+            // Comentado para evitar que o sistema pule a tela de login se já houver um usuário logado
+            // if (user) this.redirect(user.email);
             return null;
         }
         
@@ -1226,8 +1227,10 @@ const HCP_App = {
                 if (elListaItens && data.itens_detalhados) {
                     elListaItens.innerHTML = data.itens_detalhados.map(item => `
                         <div class="flex justify-between border-b border-pink-100 py-2">
-                            <span class="text-gray-600">${item.descricao}</span>
-                            <span class="text-red-500 font-bold">- ${formatarMoeda(item.valor)}</span>
+                            <span class="text-gray-600">${item.descricao}${item.informativo ? ' <small>(Empresa)</small>' : ''}</span>
+                            <span class="${item.informativo ? 'text-blue-500' : 'text-red-500'} font-bold">
+                                ${item.informativo ? '' : '- '}${formatarMoeda(item.valor)}
+                            </span>
                         </div>
                     `).join('') || '<p class="text-center text-gray-400 py-4">Nenhum desconto registrado para este período.</p>';
                 }

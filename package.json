@@ -2,19 +2,38 @@
   "name": "gestao-de-ponto-4",
   "version": "1.0.0",
   "main": "main.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron ."
-
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.highcontrolpoint.app",
+    "productName": "High Control Point",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "extraResources": [
+      {
+        "from": "dist/server",
+        "to": "server",
+        "filter": ["**/*"]
+      }
+    ],
+    "files": [
+      "main.js",
+      "front/**/*"
+    ]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "electron": "^41.7.1"
+    "electron": "^41.7.1",
+    "electron-builder": "^25.0.0"
   }
 }

@@ -48,7 +48,7 @@ Para rodar a aplicação localmente, siga o fluxo de inicialização segregada d
 git clone [https://github.com/Lanaduti/gestao-de-ponto.git](https://github.com/Lanaduti/gestao-de-ponto.git)
 cd gestao-de-ponto
 
-### 2. Configurar e Iniciar o Backend (Flask)
+2. Configurar e Iniciar o Backend (Flask)
 Certifique-se de que o serviço do seu PostgreSQL está ativo no Windows (⁠services.msc⁠) antes de rodar o comando.
 
 # Instalar as dependências do Python

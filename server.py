@@ -12,11 +12,16 @@ import webbrowser
 import pytz
 from flask_cors import CORS
 
-# Configuração do Flask para servir os arquivos do frontend
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+    # Quando empacotado pelo PyInstaller, os dados ficam em sys._MEIPASS
+    MEIPASS_DIR = getattr(sys, '_MEIPASS', BASE_DIR)
+    FRONTEND_DIR = os.path.join(MEIPASS_DIR, 'front')
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    FRONTEND_DIR = os.path.join(BASE_DIR, 'front')
 # Adiciona o diretório pai ao path para permitir a importação de 'config'
 sys.path.append(os.path.dirname(BASE_DIR))
-FRONTEND_DIR = BASE_DIR
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 CORS(app)
 
@@ -1266,9 +1271,4 @@ if __name__ == '__main__':
     print(f"Pasta do Frontend: {FRONTEND_DIR}")
     print(f"Acesse: http://localhost:5000\n")
 
-    # Abre o navegador automaticamente na página de login ao iniciar
-    # O check de WERKZEUG_RUN_MAIN evita que o navegador abra duas vezes devido ao reloader do Flask
-    if not os.environ.get("WERKZEUG_RUN_MAIN"):
-        webbrowser.open("http://localhost:5000")
-
-    app.run(debug=True, port='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000)
